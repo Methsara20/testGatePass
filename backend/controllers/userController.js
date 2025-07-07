@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 exports.getUsers = (req, res) => {
-    db.query('SELECT * FROM users', (err, results) => {
+    db.query('SELECT * FROM users ', (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
@@ -56,5 +56,23 @@ exports.deleteUser = (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
         res.json({ message: 'User deleted successfully' });
+    });
+};
+
+
+exports.loginUser = (req, res) => {
+    const { email, password, location } = req.body;
+
+    const query = `
+        SELECT * FROM users WHERE email = ? AND password = ? AND location = ?
+    `;
+    db.query(query, [email, password, location], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (results.length === 0) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        res.json(results[0]); // send back the user data
     });
 };
