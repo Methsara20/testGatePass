@@ -22,7 +22,7 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['Admin']}><Dashboard /></ProtectedRoute>} />
-        <Route path="/requests" element={<ProtectedRoute allowedRoles={['HOD']}><Requests /></ProtectedRoute>} />
+        <Route path="/requests" element={<ProtectedRoute allowedRoles={['Admin','HOD']}><Requests /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute allowedRoles={['Admin']}><Users /></ProtectedRoute>} />
         <Route path="/unauthorized" element={<h3 className="text-center mt-5">Unauthorized Access</h3>} />
         <Route path="*" element={<Navigate to="/login" />} />

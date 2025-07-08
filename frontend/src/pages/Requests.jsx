@@ -1,8 +1,17 @@
 import React from 'react'
+import Sidebar from '../components/Sidebar';
 
 function Requests() {
   return (
-    <h2>Welcome to the Requests!</h2>
+    <div className="d-flex">
+    
+        <Sidebar />
+        <div className="container mt-4">
+            <h2>Requests Page</h2>
+            <p>This is where you can manage your requests.</p>
+            {/* Add your request management components here */}
+        </div>
+    </div>
   )
 }
 
