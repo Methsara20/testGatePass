@@ -38,7 +38,9 @@ const handleSubmit = async (e) => {
         case 'HOD':
           navigate('/requests');
           break;
-        
+        case 'User':
+          navigate('/requests');
+          break;
         default:
           navigate('/dashboard'); // fallback
       }
