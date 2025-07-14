@@ -1,4 +1,3 @@
-// src/components/Sidebar.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -18,6 +17,11 @@ const Sidebar = () => {
         <li className="nav-item">
           <Link className="nav-link" to="/requests">
             <i className="bi bi-journal-text me-2"></i> Requests
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link className="nav-link" to="/my-requests">
+            <i className="bi bi-list-check me-2"></i> My Requests
           </Link>
         </li>
         <li className="nav-item">

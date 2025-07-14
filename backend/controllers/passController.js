@@ -127,3 +127,43 @@ exports.deleteGatepass = (req, res) => {
         res.json({ message: 'Gate Pass deleted successfully' });
     });
 };
+
+
+// 🔸  Return three separate lists: Pending, Approved, Rejected
+exports.getPassSummary = (req, res) => {
+  db.query('SELECT * FROM gate_pass_requests ORDER BY gate_pass_id DESC', (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({
+      Pending:  rows.filter(r => r.status === 'Pending'),
+      Approved: rows.filter(r => r.status === 'Approved'),
+      Rejected: rows.filter(r => r.status === 'Rejected'),
+    });
+  });
+};
+
+// 🔸  Approve
+exports.approveGatepass = (req, res) => {
+  const { id } = req.params;
+  db.query(
+    'UPDATE gate_pass_requests SET status = "Approved" WHERE gate_pass_id = ?',
+    [id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Request approved' });
+    }
+  );
+};
+
+// 🔸  Reject
+exports.rejectGatepass = (req, res) => {
+  const { id } = req.params;
+  db.query(
+    'UPDATE gate_pass_requests SET status = "Rejected" WHERE gate_pass_id = ?',
+    [id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Request rejected' });
+    }
+  );
+};
+

@@ -8,11 +8,16 @@ const Dashboard = () => {
   const [trend, setTrend] = useState([]);
 
   useEffect(() => {
-    fetchDashboardData().then((res) => {
-      setSummary(res.data.summary);
-      setRecent(res.data.recent);
-      setTrend(res.data.trend);
-    });
+    (async () => {
+      try {
+        const res = await fetchDashboardData();
+        setSummary(res.data.summary);
+        setRecent(res.data.recent);
+        setTrend(res.data.trend);
+      } catch (e) {
+        console.error('Dashboard load error', e);
+      }
+    })();
   }, []);
 
   return (
