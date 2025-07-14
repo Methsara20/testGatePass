@@ -5,6 +5,7 @@ import Requests from '../pages/Requests';
 import Users from '../pages/Users';
 import { useAuth } from '../context/AuthContext';
 import Approvals from '../pages/Approvals';
+import MyRequests from '../pages/MyRequests';
 
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -24,7 +25,8 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['Admin','HOD']}><Dashboard /></ProtectedRoute>} />
-        <Route path="/requests" element={<ProtectedRoute ><Requests /></ProtectedRoute>} />    
+        <Route path="/requests" element={<ProtectedRoute ><Requests /></ProtectedRoute>} />
+        <Route path="/my-requests" element={<ProtectedRoute ><MyRequests /></ProtectedRoute>} />    
         <Route path="/approvals" element={<ProtectedRoute allowedRoles={['Admin','HOD']}><Approvals /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute allowedRoles={['Admin']}><Users /></ProtectedRoute>} />
         <Route path="/unauthorized" element={<h3 className="text-center mt-5">Unauthorized Access</h3>} />

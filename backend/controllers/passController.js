@@ -167,3 +167,18 @@ exports.rejectGatepass = (req, res) => {
   );
 };
 
+exports.getMyRequests = (req, res) => {
+  const { userId } = req.params;
+  db.query(
+    'SELECT * FROM gate_pass_requests WHERE created_by = ? ORDER BY gate_pass_id DESC',
+    [userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({
+        Pending:  rows.filter(r => r.status === 'Pending'),
+        Approved: rows.filter(r => r.status === 'Approved'),
+        Rejected: rows.filter(r => r.status === 'Rejected')
+      });
+    }
+  );
+};

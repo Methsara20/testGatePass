@@ -1,7 +1,10 @@
 import axios from 'axios';
-const API_URL = 'http://localhost:5000/api/passes';
 
-export const getPasses = () => axios.get(API_URL);
-export const addPass = (data) => axios.post(API_URL, data);
-export const updatePass = (id, data) => axios.put(`${API_URL}/${id}`, data);
-export const deletePass = (id) => axios.delete(`${API_URL}/${id}`);
+const BASE_URL = 'http://localhost:5000/api';
+
+export const getPasses = () => axios.get(`${BASE_URL}/passes`);
+export const addPass = (data) => axios.post(`${BASE_URL}/passes`, data);
+export const updatePass = (id, data) => axios.put(`${BASE_URL}/passes/${id}`, data);
+export const deletePass = (id) => axios.delete(`${BASE_URL}/passes/${id}`);
+export const fetchMyRequests = (userId) => axios.get(`${BASE_URL}/passes/my/${userId}`);
+

@@ -12,6 +12,7 @@ router.get('/summary', getPassSummary);
 router.put('/:id/approve', approveGatepass);
 router.put('/:id/reject', rejectGatepass);
 
+router.get('/my/:userId', getMyRequests);
 
 
 module.exports = router;
