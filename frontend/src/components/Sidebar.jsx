@@ -30,7 +30,7 @@ const Sidebar = () => {
           </Link>
         </li>
         <li className="nav-item">
-          <Link className="nav-link" to="/gatepasses">
+          <Link className="nav-link" to="/deliveries">
             <i className="bi bi-truck me-2"></i> Gatepasses
           </Link>
         </li>

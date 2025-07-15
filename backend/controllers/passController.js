@@ -129,7 +129,7 @@ exports.deleteGatepass = (req, res) => {
 };
 
 
-// 🔸  Return three separate lists: Pending, Approved, Rejected
+//   Return three separate lists: Pending, Approved, Rejected
 exports.getPassSummary = (req, res) => {
   db.query('SELECT * FROM gate_pass_requests ORDER BY gate_pass_id DESC', (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -141,7 +141,7 @@ exports.getPassSummary = (req, res) => {
   });
 };
 
-// 🔸  Approve
+//   Approve
 exports.approveGatepass = (req, res) => {
   const { id } = req.params;
   db.query(
@@ -154,7 +154,7 @@ exports.approveGatepass = (req, res) => {
   );
 };
 
-// 🔸  Reject
+//   Reject
 exports.rejectGatepass = (req, res) => {
   const { id } = req.params;
   db.query(
@@ -179,6 +179,51 @@ exports.getMyRequests = (req, res) => {
         Approved: rows.filter(r => r.status === 'Approved'),
         Rejected: rows.filter(r => r.status === 'Rejected')
       });
+    }
+  );
+};
+
+
+// All gate-passes that were approved but not yet delivered
+exports.getDeliverablePasses = (req, res) => {
+  db.query(
+    `SELECT * FROM gate_pass_requests
+     WHERE status = 'Approved' AND delivery_status = 'Waiting'
+     ORDER BY gate_pass_id DESC`,
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+};
+
+// Accept delivery
+exports.acceptDelivery = (req, res) => {
+  const { id } = req.params;
+  db.query(
+    `UPDATE gate_pass_requests
+       SET delivery_status = 'Accepted', delivery_comment = NULL
+     WHERE gate_pass_id = ?`,
+    [id],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Gate-pass marked as Accepted' });
+    }
+  );
+};
+
+// Reject delivery / report issue
+exports.rejectDelivery = (req, res) => {
+  const { id } = req.params;
+  const { comment } = req.body;               // JSON { comment: 'box damaged' }
+  db.query(
+    `UPDATE gate_pass_requests
+       SET delivery_status = 'Issue', delivery_comment = ?
+     WHERE gate_pass_id = ?`,
+    [comment || '', id],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Delivery issue recorded' });
     }
   );
 };
