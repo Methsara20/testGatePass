@@ -4,40 +4,39 @@ import { useNavigate } from 'react-router-dom';
 import { login } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { validateEmail, validateRequired } from '../utils/validators';
+import PasswordResetHelp from "../components/PasswordResetHelp";
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [location, setLocation] = useState('');
   const [error, setError] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
 
   const navigate = useNavigate();
   const { setUser } = useAuth();
 
-
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-  
+
     if (!validateRequired(location) || !validateEmail(email) || !validateRequired(password)) {
       return setError('Please fill all fields correctly.');
     }
-  
+
     try {
       const response = await login(email, password, location);
       const user = response.data;
-  
+
       localStorage.setItem('users', JSON.stringify(user));
       setUser(user);
-  
-      // 🔁 Role-based redirect
+
+      // Role-based redirect
       switch (user.role) {
         case 'Admin':
           navigate('/dashboard');
           break;
         case 'HOD':
-          navigate('/requests');
-          break;
         case 'User':
           navigate('/requests');
           break;
@@ -48,7 +47,6 @@ const handleSubmit = async (e) => {
       setError('Invalid credentials or server error.');
     }
   };
-  
 
   return (
     <div className="container d-flex align-items-center justify-content-center vh-100">
@@ -59,7 +57,7 @@ const handleSubmit = async (e) => {
             <label className="form-label">Location</label>
             <select className="form-select" value={location} onChange={(e) => setLocation(e.target.value)}>
               <option value="">Select your location</option>
-              <option value="Head Office">Head Office</option>
+              <option value="CPHO">CPHO</option>
               <option value="Colombo Office">Colombo Office</option>
               <option value="Branch B">Branch B</option>
             </select>
@@ -77,9 +75,17 @@ const handleSubmit = async (e) => {
             <button type="submit" className="btn btn-primary">Sign In</button>
           </div>
         </form>
-        <div className="text-center mt-2">
-          <a href="#" className="text-decoration-none">Forgot password?</a>
+        <div className="text-end mt-2">
+          <button
+            type="button"
+            className="btn btn-link p-0 small"
+            onClick={() => setShowHelp(true)}
+          >
+            Password Reset
+          </button>
         </div>
+
+        <PasswordResetHelp show={showHelp} onHide={() => setShowHelp(false)} />
       </div>
     </div>
   );
