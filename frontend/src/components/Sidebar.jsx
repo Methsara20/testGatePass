@@ -14,26 +14,39 @@ const Sidebar = () => {
             <i className="bi bi-speedometer2 me-2"></i> Dashboard
           </Link>
         </li>
-        <li className="nav-item">
+        
+        {/* <li className="nav-item">
           <Link className="nav-link" to="/requests">
             <i className="bi bi-journal-text me-2"></i> Requests
           </Link>
+        </li> */}
+
+        {/* New Gate Pass request form*/}
+        <li className="nav-item">
+          <Link className="nav-link" to="/gatepass/new">
+            <i className="bi bi-pencil-square me-2" /> New Gate-Pass
+          </Link>
         </li>
+
         <li className="nav-item">
           <Link className="nav-link" to="/my-requests">
             <i className="bi bi-list-check me-2"></i> My Requests
           </Link>
         </li>
+
         <li className="nav-item">
           <Link className="nav-link" to="/approvals">
             <i className="bi bi-check2-square me-2"></i> Approvals
           </Link>
         </li>
+
         <li className="nav-item">
           <Link className="nav-link" to="/deliveries">
             <i className="bi bi-truck me-2"></i> Gatepasses
           </Link>
         </li>
+
+        
 
         {/* Admin-only section */}
         {user?.role === "Admin" && (
