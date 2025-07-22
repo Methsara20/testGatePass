@@ -1,20 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Form, Button, Table, Row, Col, Alert } from "react-bootstrap";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
+import { useAuth } from "../context/AuthContext";
 
-const GatePassForm = ({ user = {} }) => {
+const GatePassForm = () => {
+  const { user } = useAuth();
+  const [loadingUser, setLoadingUser] = useState(true);
+
   const [formData, setFormData] = useState({
     request_type: "Outward",
     request_date: new Date().toISOString().split("T")[0],
     request_time: new Date().toTimeString().substring(0, 5),
-    employee_id: user?.id || "",
-    created_by: user?.id || 1,
-    full_name: user?.full_name || "",
-    department: user?.department || "",
-    email: user?.email || "",
-    phone: user?.phone_number || "",
-    from_location: user?.location || "",
+    employee_id: "",
+    created_by: "",
+    full_name: "",
+    department: "",
+    email: "",
+    phone: "",
+    from_location: "CPHO",
     destination_type: "internal",
     to_location_internal: "",
     destination_address: "",
@@ -32,7 +36,7 @@ const GatePassForm = ({ user = {} }) => {
     is_draft: false
   });
 
-  const [materials, setMaterials] = useState([{ 
+  const [materials, setMaterials] = useState([{
     id: Date.now(),
     description: "",
     serialNumber: "",
@@ -47,12 +51,28 @@ const GatePassForm = ({ user = {} }) => {
   const [error, setError] = useState("");
   const [isDraft, setIsDraft] = useState(false);
 
+  useEffect(() => {
+    if (user) {
+      setLoadingUser(false);
+      setFormData(prev => ({
+        ...prev,
+        employee_id: user.id,
+        created_by: user.id,
+        full_name: user.full_name || "",
+        department: user.role || "",
+        email: user.email || "",
+        phone: user.phone_number || "",
+        from_location: user.location || "CPHO"
+      }));
+    }
+  }, [user]);
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleMaterialChange = (id, field, value) => {
-    setMaterials(materials.map(item => 
+    setMaterials(materials.map(item =>
       item.id === id ? { ...item, [field]: value } : item
     ));
   };
@@ -65,7 +85,7 @@ const GatePassForm = ({ user = {} }) => {
   };
 
   const addMaterialRow = () => {
-    setMaterials([...materials, { 
+    setMaterials([...materials, {
       id: Date.now(),
       description: "",
       serialNumber: "",
@@ -83,6 +103,11 @@ const GatePassForm = ({ user = {} }) => {
   const handleSubmit = async (e, isDraftSubmit = false) => {
     e.preventDefault();
     setError("");
+
+    if (!formData.created_by) {
+      setError("No valid user ID found. Please ensure you're logged in.");
+      return;
+    }
 
     if (!isDraftSubmit) {
       if (!formData.purpose) {
@@ -103,7 +128,7 @@ const GatePassForm = ({ user = {} }) => {
 
     try {
       const formDataToSend = new FormData();
-      
+
       const dbPayload = {
         request_type: formData.request_type,
         request_date: formData.request_date,
@@ -111,12 +136,12 @@ const GatePassForm = ({ user = {} }) => {
         location: formData.from_location,
         purpose: formData.purpose,
         additional_notes: formData.additional_notes || "",
-        status: isDraftSubmit ? "Pending" : "Approved",
+        status: "Pending",
         is_draft: isDraftSubmit,
         is_printable: 0,
         delivery_status: "Waiting",
-        destination_address: formData.destination_type === "internal" 
-          ? formData.to_location_internal 
+        destination_address: formData.destination_type === "internal"
+          ? formData.to_location_internal
           : formData.destination_address,
         transport_mode: formData.transport_mode,
         vehicle_no: formData.vehicle_number,
@@ -133,7 +158,7 @@ const GatePassForm = ({ user = {} }) => {
       });
 
       formDataToSend.append('materials', JSON.stringify(materials));
-      
+
       if (formData.document) {
         formDataToSend.append('document', formData.document);
       }
@@ -147,9 +172,8 @@ const GatePassForm = ({ user = {} }) => {
       setSubmitted(true);
       setIsDraft(isDraftSubmit);
       setGatePassId(response.data.gatePassId);
-      
+
       if (!isDraftSubmit) {
-        // Reset form after successful submission
         setFormData({
           ...formData,
           request_type: "Outward",
@@ -171,7 +195,8 @@ const GatePassForm = ({ user = {} }) => {
           is_draft: false,
           document: null
         });
-        setMaterials([{ 
+
+        setMaterials([{
           id: Date.now(),
           description: "",
           serialNumber: "",
@@ -181,13 +206,35 @@ const GatePassForm = ({ user = {} }) => {
           returnDate: ""
         }]);
       }
-      
+
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Failed to submit. Please try again.";
       setError(errorMessage);
       console.error("Submission error:", err.response?.data || err.message);
     }
   };
+
+  if (loadingUser) {
+    return (
+      <div className="d-flex">
+        <Sidebar />
+        <div className="p-4 flex-grow-1 w-100">
+          <div className="text-center mt-5">Loading user data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="d-flex">
+        <Sidebar />
+        <div className="p-4 flex-grow-1 w-100">
+          <div className="alert alert-danger">Please log in to access the gate pass form.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="d-flex">
@@ -274,13 +321,21 @@ const GatePassForm = ({ user = {} }) => {
             <Col>
               <Form.Group>
                 <Form.Label>Employee ID</Form.Label>
-                <Form.Control type="text" value={formData.employee_id} disabled />
+                <Form.Control 
+                  type="text" 
+                  value={formData.employee_id} 
+                  disabled 
+                />
               </Form.Group>
             </Col>
             <Col>
               <Form.Group>
                 <Form.Label>Name</Form.Label>
-                <Form.Control type="text" value={formData.full_name} disabled />
+                <Form.Control 
+                  type="text" 
+                  value={formData.full_name} 
+                  disabled 
+                />
               </Form.Group>
             </Col>
           </Row>
@@ -289,19 +344,31 @@ const GatePassForm = ({ user = {} }) => {
             <Col>
               <Form.Group>
                 <Form.Label>Department</Form.Label>
-                <Form.Control type="text" value={formData.department} disabled />
+                <Form.Control 
+                  type="text" 
+                  value={formData.department} 
+                  disabled 
+                />
               </Form.Group>
             </Col>
             <Col>
               <Form.Group>
                 <Form.Label>Email</Form.Label>
-                <Form.Control type="text" value={formData.email} disabled />
+                <Form.Control 
+                  type="text" 
+                  value={formData.email} 
+                  disabled 
+                />
               </Form.Group>
             </Col>
             <Col>
               <Form.Group>
                 <Form.Label>Phone</Form.Label>
-                <Form.Control type="text" value={formData.phone} disabled />
+                <Form.Control 
+                  type="text" 
+                  value={formData.phone} 
+                  disabled 
+                />
               </Form.Group>
             </Col>
           </Row>
@@ -310,7 +377,11 @@ const GatePassForm = ({ user = {} }) => {
             <Col>
               <Form.Group>
                 <Form.Label>From Location</Form.Label>
-                <Form.Control type="text" value={formData.from_location} disabled />
+                <Form.Control 
+                  type="text" 
+                  value={formData.from_location} 
+                  disabled 
+                />
               </Form.Group>
             </Col>
           </Row>

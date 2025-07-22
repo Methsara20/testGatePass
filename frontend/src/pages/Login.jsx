@@ -38,7 +38,7 @@ const Login = () => {
           break;
         case 'HOD':
         case 'User':
-          navigate('/requests');
+          navigate('/gatepass/new');
           break;
         default:
           navigate('/dashboard'); // fallback
