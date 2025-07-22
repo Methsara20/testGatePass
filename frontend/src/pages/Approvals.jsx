@@ -184,9 +184,11 @@ const Approvals = () => {
                   </div>
                   <div className="col-md-4">
                     <h6>Location Details</h6>
-                    <p><strong>From Location:</strong> {detailRow.location}</p>
+                    <p><strong>From Location:</strong> {detailRow.from_location || detailRow.location}</p>
                     <p><strong>Destination Type:</strong> {detailRow.destination_type}</p>
-                    <p><strong>Destination:</strong> {detailRow.destination_type === 'internal' ? detailRow.to_location_internal : detailRow.destination_address}</p>
+                    <p><strong>Destination:</strong> {detailRow.destination_type === 'internal' ? 
+                      (detailRow.to_location_internal || detailRow.destination_address) : 
+                      detailRow.destination_address}</p>
                     {detailRow.destination_type === 'external' && (
                       <p><strong>Receiver Name:</strong> {detailRow.receiver_name}</p>
                     )}
@@ -208,7 +210,7 @@ const Approvals = () => {
                   <div className="col-md-6">
                     <h6>Transport Details</h6>
                     <p><strong>Transport Mode:</strong> {detailRow.transport_mode || 'N/A'}</p>
-                    <p><strong>Vehicle Number:</strong> {detailRow.vehicle_no || 'N/A'}</p>
+                    <p><strong>Vehicle Number:</strong> {detailRow.vehicle_number || detailRow.vehicle_no || 'N/A'}</p>
                     <p><strong>Driver Name:</strong> {detailRow.driver_name || 'N/A'}</p>
                     <p><strong>Driver Contact:</strong> {detailRow.driver_contact || 'N/A'}</p>
                     <p><strong>Delivery Comments:</strong> {detailRow.delivery_comment || 'N/A'}</p>
@@ -230,16 +232,33 @@ const Approvals = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {detailRow.materials && JSON.parse(detailRow.materials).map((material, index) => (
-                          <tr key={index}>
-                            <td>{material.description}</td>
-                            <td>{material.serial_number}</td>
-                            <td>{material.qty}</td>
-                            <td>{material.uom}</td>
-                            <td>{material.returnable ? 'Yes' : 'No'}</td>
-                            <td>{material.return_date || 'N/A'}</td>
+                        {detailRow.materials && typeof detailRow.materials === 'string' ? (
+                          JSON.parse(detailRow.materials).map((material, index) => (
+                            <tr key={index}>
+                              <td>{material.description}</td>
+                              <td>{material.serialNumber || material.serial_number}</td>
+                              <td>{material.quantity || material.qty}</td>
+                              <td>{material.uom}</td>
+                              <td>{material.isReturnable ? 'Yes' : material.returnable ? 'Yes' : 'No'}</td>
+                              <td>{material.returnDate || material.return_date || 'N/A'}</td>
+                            </tr>
+                          ))
+                        ) : detailRow.materials ? (
+                          detailRow.materials.map((material, index) => (
+                            <tr key={index}>
+                              <td>{material.description || material.item_name}</td>
+                              <td>{material.serialNumber || material.serial_number}</td>
+                              <td>{material.quantity || material.qty}</td>
+                              <td>{material.uom}</td>
+                              <td>{material.isReturnable ? 'Yes' : material.returnable ? 'Yes' : 'No'}</td>
+                              <td>{material.returnDate || material.return_date || 'N/A'}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="6" className="text-center">No materials listed</td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </Table>
                   </div>

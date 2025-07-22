@@ -39,11 +39,11 @@ const GatePassForm = () => {
   const [materials, setMaterials] = useState([{
     id: Date.now(),
     description: "",
-    serialNumber: "",
-    quantity: 1,
+    serial_number: "",
+    qty: 1,
     uom: "",
-    isReturnable: false,
-    returnDate: ""
+    returnable: false,
+    return_date: ""
   }]);
 
   const [submitted, setSubmitted] = useState(false);
@@ -78,9 +78,9 @@ const GatePassForm = () => {
   };
 
   const toggleReturnable = (id, checked) => {
-    handleMaterialChange(id, 'isReturnable', checked);
+    handleMaterialChange(id, 'returnable', checked);
     if (!checked) {
-      handleMaterialChange(id, 'returnDate', '');
+      handleMaterialChange(id, 'return_date', '');
     }
   };
 
@@ -88,11 +88,11 @@ const GatePassForm = () => {
     setMaterials([...materials, {
       id: Date.now(),
       description: "",
-      serialNumber: "",
-      quantity: 1,
+      serial_number: "",
+      qty: 1,
       uom: "",
-      isReturnable: false,
-      returnDate: ""
+      returnable: false,
+      return_date: ""
     }]);
   };
 
@@ -115,7 +115,7 @@ const GatePassForm = () => {
         return;
       }
 
-      if (materials.some(m => !m.description || !m.quantity || !m.uom)) {
+      if (materials.some(m => !m.description || !m.qty || !m.uom)) {
         setError("Please fill all required material fields");
         return;
       }
@@ -199,11 +199,11 @@ const GatePassForm = () => {
         setMaterials([{
           id: Date.now(),
           description: "",
-          serialNumber: "",
-          quantity: 1,
+          serial_number: "",
+          qty: 1,
           uom: "",
-          isReturnable: false,
-          returnDate: ""
+          returnable: false,
+          return_date: ""
         }]);
       }
 
@@ -540,13 +540,13 @@ const GatePassForm = () => {
           </Form.Group>
 
           <h5 className="mt-4">Material Details</h5>
-          <Table bordered responsive>
-            <thead>
+          <Table bordered responsive className="mt-3">
+            <thead className="table-light">
               <tr>
-                <th>Item Description</th>
-                <th>Serial Number / Item Code</th>
-                <th>Qty</th>
-                <th>UOM</th>
+                <th>Item Description*</th>
+                <th>Serial Number/Item Code*</th>
+                <th>Qty*</th>
+                <th>UOM*</th>
                 <th>Returnable</th>
                 <th>Return Date</th>
                 <th>Action</th>
@@ -566,8 +566,9 @@ const GatePassForm = () => {
                   <td>
                     <Form.Control
                       type="text"
-                      value={item.serialNumber}
-                      onChange={e => handleMaterialChange(item.id, 'serialNumber', e.target.value)}
+                      value={item.serial_number}
+                      onChange={e => handleMaterialChange(item.id, 'serial_number', e.target.value)}
+                      placeholder="SN-0001"
                       required
                     />
                   </td>
@@ -575,23 +576,31 @@ const GatePassForm = () => {
                     <Form.Control
                       type="number"
                       min="1"
-                      value={item.quantity}
-                      onChange={e => handleMaterialChange(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                      value={item.qty}
+                      onChange={e => handleMaterialChange(item.id, 'qty', parseInt(e.target.value) || 0)}
                       required
                     />
                   </td>
                   <td>
                     <Form.Control
-                      type="text"
+                      as="select"
                       value={item.uom}
                       onChange={e => handleMaterialChange(item.id, 'uom', e.target.value)}
                       required
-                    />
+                    >
+                      <option value="">Select UOM</option>
+                      <option value="Unit">Unit</option>
+                      <option value="PC">Piece</option>
+                      <option value="KG">Kilogram</option>
+                      <option value="M">Meter</option>
+                      <option value="L">Liter</option>
+                      <option value="SET">Set</option>
+                    </Form.Control>
                   </td>
-                  <td className="text-center">
+                  <td className="text-center align-middle">
                     <Form.Check
                       type="checkbox"
-                      checked={item.isReturnable}
+                      checked={item.returnable}
                       disabled={formData.request_type === "Non-returnable"}
                       onChange={e => toggleReturnable(item.id, e.target.checked)}
                       className="mt-2"
@@ -600,31 +609,36 @@ const GatePassForm = () => {
                   <td>
                     <Form.Control
                       type="date"
-                      value={item.returnDate}
-                      onChange={e => handleMaterialChange(item.id, 'returnDate', e.target.value)}
-                      disabled={!item.isReturnable || formData.request_type === "Non-returnable"}
+                      value={item.return_date}
+                      onChange={e => handleMaterialChange(item.id, 'return_date', e.target.value)}
+                      disabled={!item.returnable || formData.request_type === "Non-returnable"}
+                      min={formData.request_date}
                     />
                   </td>
-                  <td className="text-center">
-                    {materials.length > 1 && (
-                      <Button
-                        variant="danger"
-                        onClick={() => removeMaterialRow(item.id)}
-                        title="Remove row"
-                        size="sm"
-                      >
-                        Remove
-                      </Button>
-                    )}
+                  <td className="text-center align-middle">
+                    <Button
+                      variant="outline-danger"
+                      onClick={() => removeMaterialRow(item.id)}
+                      title="Remove row"
+                      size="sm"
+                      disabled={materials.length <= 1}
+                    >
+                      <i className="bi bi-trash"></i>
+                    </Button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </Table>
 
-          <Button variant="secondary" onClick={addMaterialRow} className="mb-3">
-            Add Material
+          <Button 
+            variant="outline-primary" 
+            onClick={addMaterialRow} 
+            className="mb-3"
+          >
+            <i className="bi bi-plus-circle"></i> Add Material
           </Button>
+
 
           <Form.Group className="mb-3">
             <Form.Label>Supporting Document (optional)</Form.Label>
