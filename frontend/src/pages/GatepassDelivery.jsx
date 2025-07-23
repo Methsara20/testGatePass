@@ -5,27 +5,48 @@ import {
   acceptDelivery,
   rejectDelivery,
 } from "../services/deliveryService";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, InputGroup } from "react-bootstrap";
+import { BiSearch } from "react-icons/bi";
 
 const GatepassDelivery = () => {
   const [passes, setPasses] = useState([]);
+  const [filteredPasses, setFilteredPasses] = useState([]);
   const [rejectId, setRejectId] = useState(null);
   const [comment, setComment] = useState("");
   const [acceptId, setAcceptId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     let isMounted = true;
     fetchDeliveries().then((res) => {
-      if (isMounted) setPasses(res.data);
+      if (isMounted) {
+        setPasses(res.data);
+        setFilteredPasses(res.data);
+      }
     });
     return () => {
       isMounted = false;
     };
   }, []);
 
+  useEffect(() => {
+    if (searchTerm === "") {
+      setFilteredPasses(passes);
+    } else {
+      const filtered = passes.filter(
+        (p) =>
+          p.gate_pass_id.toString().includes(searchTerm.toLowerCase()) ||
+          (p.description &&
+            p.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (p.location &&
+            p.location.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredPasses(filtered);
+    }
+  }, [searchTerm, passes]);
+
   /* ----------  Accept with confirmation  ---------- */
   const handleAccept = async (id) => {
-    // Quick, built-in confirmation. Swap for a Modal if you want fancier UX
     if (
       !window.confirm("Confirm that all items were received in good condition?")
     )
@@ -59,12 +80,35 @@ const GatepassDelivery = () => {
       <div className="p-4 flex-grow-1 w-100">
         <h4 className="mb-3">Gate-Pass Delivery</h4>
 
+        {/* Improved Search Input */}
+        <div className="mb-3">
+          <InputGroup>
+            <InputGroup.Text>
+              <BiSearch />
+            </InputGroup.Text>
+            <Form.Control
+              type="text"
+              placeholder="Search by ID, description, or location..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <Button
+                variant="outline-secondary"
+                onClick={() => setSearchTerm("")}
+              >
+                Clear
+              </Button>
+            )}
+          </InputGroup>
+        </div>
+
         <div className="table-responsive">
           <table className="table align-middle">
             <thead className="table-light">
               <tr>
                 <th>ID</th>
-                <th>Item</th>
+                <th>Description</th>
                 <th>Qty</th>
                 <th>Date</th>
                 <th>Location</th>
@@ -72,40 +116,37 @@ const GatepassDelivery = () => {
               </tr>
             </thead>
             <tbody>
-              {passes.map((p) => (
+              {filteredPasses.map((p) => (
                 <tr key={p.gate_pass_id}>
                   <td className="fw-bold">{`REQ-${p.gate_pass_id}`}</td>
-                  <td>{p.item_name}</td>
-                  <td>{p.quantity}</td>
+                  <td>{p.description}</td>
+                  <td>{p.qty}</td>
                   <td>{p.request_date}</td>
                   <td>{p.location}</td>
                   <td>
-                    {/* Accept button with confirmation modal */}
                     <Button
                       size="sm"
                       variant="success"
                       onClick={() => setAcceptId(p.gate_pass_id)}
                     >
                       <i className="bi bi-check-lg me-1" />
-                      
                     </Button>{" "}
-
-                    {/* Reject button with issue reporting modal */}
                     <Button
                       size="sm"
                       variant="danger"
                       onClick={() => setRejectId(p.gate_pass_id)}
                     >
-                      {/*  ! octagon icon before text  */}
                       <i className="bi bi-exclamation-octagon me-1" />
                     </Button>
                   </td>
                 </tr>
               ))}
-              {passes.length === 0 && (
+              {filteredPasses.length === 0 && (
                 <tr>
                   <td colSpan="6" className="text-center py-4">
-                    No deliverable passes
+                    {passes.length === 0
+                      ? "No deliverable passes"
+                      : "No matching results found"}
                   </td>
                 </tr>
               )}
@@ -114,6 +155,7 @@ const GatepassDelivery = () => {
         </div>
       </div>
 
+      {/* Modals remain unchanged */}
       <Modal show={!!acceptId} onHide={() => setAcceptId(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Acceptance</Modal.Title>
@@ -143,7 +185,6 @@ const GatepassDelivery = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Reject-Issue modal (unchanged) */}
       <Modal show={!!rejectId} onHide={() => setRejectId(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Report Delivery Issue</Modal.Title>
