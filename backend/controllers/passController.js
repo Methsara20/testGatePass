@@ -168,6 +168,8 @@ exports.getPassSummary = (req, res) => {
   });
 };
 
+
+
 // Approve gate pass
 exports.approveGatepass = (req, res) => {
   const { id } = req.params;
@@ -198,6 +200,8 @@ exports.getMyRequests = (req, res) => {
     });
   });
 };
+
+
 
 // Get all approved but not delivered gate passes
 exports.getDeliverablePasses = (req, res) => {
@@ -235,4 +239,34 @@ exports.rejectDelivery = (req, res) => {
       res.json({ message: 'Delivery issue recorded' });
     }
   );
+};
+
+
+exports.getGatepassWithMaterialsById = (req, res) => {
+  const id = req.params.id;
+
+  // First: Fetch main gate pass data
+  db.query('SELECT * FROM gate_pass_requests WHERE gate_pass_id = ?', [id], (err, gatePassRows) => {
+    if (err) {
+      console.error('Error fetching gate pass:', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+
+    if (gatePassRows.length === 0) {
+      return res.status(404).json({ message: 'Gate pass not found' });
+    }
+
+    const gatePass = gatePassRows[0];
+
+    // Second: Fetch related materials
+    db.query('SELECT * FROM gate_pass_materials WHERE gate_pass_id = ?', [id], (err, materialRows) => {
+      if (err) {
+        console.error('Error fetching materials:', err);
+        return res.status(500).json({ message: 'Server error' });
+      }
+
+      gatePass.materials = materialRows;
+      res.json(gatePass);
+    });
+  });
 };

@@ -62,7 +62,7 @@ const GatePassForm = () => {
         department: user.role || "",
         email: user.email || "",
         phone: user.phone_number || "",
-        from_location: user.location || "CPHO"
+        from_location: user.location || ""
       }));
     }
   }, [user]);

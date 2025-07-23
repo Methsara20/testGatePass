@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchSummary, approvePass, rejectPass } from '../services/approvalService';
+import { fetchSummary, approvePass, rejectPass, fetchGatePassWithMaterials } from '../services/approvalService';
 import { Modal, Button, Table, InputGroup, Form } from 'react-bootstrap';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Sidebar from '../components/Sidebar';
@@ -55,6 +55,16 @@ const Approvals = () => {
     }
   }, [searchTerm, lists, tab]);
 
+  const handleViewDetails = async (id) => {
+    try {
+      const res = await fetchGatePassWithMaterials(id);
+      setDetailRow(res.data);
+    } catch (error) {
+      console.error("Error fetching gate pass details:", error);
+    }
+  };
+  
+
   /* row */
   const Row = ({ r }) => (
     <tr>
@@ -78,7 +88,7 @@ const Approvals = () => {
       <td>
         <i
           className="bi bi-eye text-primary me-3 cursor-pointer"
-          onClick={() => setDetailRow(r)}
+          onClick={() => handleViewDetails(r.gate_pass_id)}
         />
         {tab === 'Pending' && (
           <>
@@ -205,6 +215,12 @@ const Approvals = () => {
             </Button>
           </Modal.Footer>
         </Modal>
+
+<i
+  className="bi bi-eye text-primary me-3 cursor-pointer"
+  onClick={() => handleViewDetails(r.gate_pass_id)}
+/>
+
 
         {/* Enhanced Details modal */}
         <Modal show={!!detailRow} onHide={() => setDetailRow(null)} centered size="xl">

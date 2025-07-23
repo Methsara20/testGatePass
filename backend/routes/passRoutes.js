@@ -14,7 +14,8 @@ const {
   getMyRequests,
   getDeliverablePasses,
   acceptDelivery,
-  rejectDelivery
+  rejectDelivery,
+  getGatepassWithMaterialsById
 } = require('../controllers/passController');
 
 // Main routes
@@ -35,5 +36,8 @@ router.get('/my/:userId', getMyRequests);
 router.get('/deliveries', getDeliverablePasses);
 router.put('/:id/accept', acceptDelivery);
 router.put('/:id/issue', rejectDelivery);
+
+// Get gate pass with materials by ID
+router.get('/:id/materials', getGatepassWithMaterialsById);
 
 module.exports = router;
