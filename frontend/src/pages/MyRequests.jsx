@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchMyRequests } from '../services/gatepassService';
-import { fetchGatePassWithMaterials } from '../services/approvalService'; // Add this import
+import { fetchGatePassWithMaterials } from '../services/approvalService'; 
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { Modal, Button, Table, InputGroup, Form } from 'react-bootstrap';
@@ -44,7 +44,16 @@ const MyRequests = () => {
   const handleViewDetails = async (id) => {
     try {
       const res = await fetchGatePassWithMaterials(id);
-      setDetailRow(res.data);
+      console.log("API Response:", res.data); // For debugging
+      setDetailRow({
+        ...res.data,
+        // Add fallbacks for user details
+        requester_name: res.data.requester_name || res.data.full_name || res.data.created_by,
+        requester_email: res.data.requester_email || res.data.email || 'N/A',
+        requester_role: res.data.requester_role || res.data.role || 'N/A',
+        requester_phone: res.data.requester_phone || 'N/A',
+        requester_location: res.data.requester_location || 'N/A'
+      });
     } catch (error) {
       console.error("Error fetching gate pass details:", error);
     }
@@ -161,9 +170,10 @@ const MyRequests = () => {
                 </div>
                 <div className="col-md-4">
                   <h6>Requester Details</h6>
-                  <p><strong>Name:</strong> {detailRow.full_name || detailRow.created_by}</p>
-                  <p><strong>Department:</strong> {detailRow.role || 'N/A'}</p>
-                  <p><strong>Email:</strong> {detailRow.email || 'N/A'}</p>
+                  <p><strong>Name:</strong> {detailRow.requester_name || 'N/A'}</p>
+                  <p><strong>Email:</strong> {detailRow.requester_email || 'N/A'}</p>
+                  <p><strong>Phone:</strong> {detailRow.requester_phone || 'N/A'}</p>
+                  <p><strong>Location:</strong> {detailRow.requester_location || 'N/A'}</p>
                 </div>
                 <div className="col-md-4">
                   <h6>Location Details</h6>
