@@ -1,3 +1,3 @@
 // src/services/dashboardService.js
 import axios from 'axios';
-export const fetchDashboardData = () => axios.get('http://localhost:5000/api/dashboard/summary');
+export const fetchDashboardData = () => axios.get('http://192.168.10.144:5000/api/dashboard/summary');

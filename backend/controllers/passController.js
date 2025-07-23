@@ -245,8 +245,21 @@ exports.rejectDelivery = (req, res) => {
 exports.getGatepassWithMaterialsById = (req, res) => {
   const id = req.params.id;
 
-  // First: Fetch main gate pass data
-  db.query('SELECT * FROM gate_pass_requests WHERE gate_pass_id = ?', [id], (err, gatePassRows) => {
+  const query = `
+    SELECT 
+      gpr.*,
+      u1.full_name AS requester_name,
+      u1.email AS requester_email,
+      u1.role AS requester_role,
+      u1.phone_number AS requester_phone,
+      u1.location AS requester_location,
+      u2.full_name AS approver_name
+    FROM gate_pass_requests gpr
+    LEFT JOIN users u1 ON gpr.created_by = u1.id
+    LEFT JOIN users u2 ON gpr.approved_by = u2.id
+    WHERE gpr.gate_pass_id = ?`;
+
+  db.query(query, [id], (err, gatePassRows) => {
     if (err) {
       console.error('Error fetching gate pass:', err);
       return res.status(500).json({ message: 'Server error' });
@@ -258,7 +271,7 @@ exports.getGatepassWithMaterialsById = (req, res) => {
 
     const gatePass = gatePassRows[0];
 
-    // Second: Fetch related materials
+    // Fetch materials
     db.query('SELECT * FROM gate_pass_materials WHERE gate_pass_id = ?', [id], (err, materialRows) => {
       if (err) {
         console.error('Error fetching materials:', err);

@@ -4,6 +4,7 @@ import { Modal, Button, Table, InputGroup, Form } from 'react-bootstrap';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Sidebar from '../components/Sidebar';
 import { BiSearch } from "react-icons/bi";
+import { getUserById } from '../services/userService'; // Add this import
 
 const Approvals = () => {
   const [tab, setTab] = useState('Pending');
@@ -235,11 +236,11 @@ const Approvals = () => {
                   </div>
                   <div className="col-md-4">
                     <h6>Requester Details</h6>
-                    <p><strong>Employee ID:</strong> {detailRow.id}</p>
-                    <p><strong>Name:</strong> {detailRow.full_name}</p>
-                    <p><strong>Department:</strong> {detailRow.role}</p>
-                    <p><strong>Email:</strong> {detailRow.email}</p>
-                    <p><strong>Phone:</strong> {detailRow.phone_number}</p>
+                    <p><strong>Name:</strong> {detailRow.requester_name || 'N/A'}</p>
+                    <p><strong>Email:</strong> {detailRow.requester_email || 'N/A'}</p>
+                    <p><strong>Role:</strong> {detailRow.requester_role || 'N/A'}</p>
+                    <p><strong>Phone:</strong> {detailRow.requester_phone || 'N/A'}</p>
+                    <p><strong>Location:</strong> {detailRow.requester_location || 'N/A'}</p>
                   </div>
                   <div className="col-md-4">
                     <h6>Location Details</h6>

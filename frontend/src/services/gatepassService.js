@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = 'http://192.168.10.144:5000/api';
 
 export const getPasses = () => axios.get(`${BASE_URL}/passes`);
 export const addPass = (data) => axios.post(`${BASE_URL}/passes`, data);
