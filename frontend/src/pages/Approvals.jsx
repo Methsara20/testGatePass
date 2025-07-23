@@ -216,11 +216,6 @@ const Approvals = () => {
           </Modal.Footer>
         </Modal>
 
-<i
-  className="bi bi-eye text-primary me-3 cursor-pointer"
-  onClick={() => handleViewDetails(r.gate_pass_id)}
-/>
-
 
         {/* Enhanced Details modal */}
         <Modal show={!!detailRow} onHide={() => setDetailRow(null)} centered size="xl">

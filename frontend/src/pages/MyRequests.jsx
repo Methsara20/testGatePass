@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchMyRequests } from '../services/gatepassService';
+import { fetchGatePassWithMaterials } from '../services/approvalService'; // Add this import
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { Modal, Button, Table, InputGroup, Form } from 'react-bootstrap';
@@ -40,6 +41,15 @@ const MyRequests = () => {
     }
   }, [searchTerm, lists, tab]);
 
+  const handleViewDetails = async (id) => {
+    try {
+      const res = await fetchGatePassWithMaterials(id);
+      setDetailRow(res.data);
+    } catch (error) {
+      console.error("Error fetching gate pass details:", error);
+    }
+  };
+
   const Row = ({ r }) => (
     <tr>
       <td className="fw-bold">{`REQ-${r.gate_pass_id}`}</td>
@@ -58,7 +68,7 @@ const MyRequests = () => {
       <td>
         <i
           className="bi bi-eye text-primary cursor-pointer"
-          onClick={() => setDetailRow(r)}
+          onClick={() => handleViewDetails(r.gate_pass_id)} // Updated to use the new handler
         />
       </td>
     </tr>
@@ -133,62 +143,118 @@ const MyRequests = () => {
         </div>
       </div>
 
-      {/* Details modal */}
-      <Modal show={!!detailRow} onHide={() => setDetailRow(null)} centered size="lg">
+      {/* Enhanced Details modal */}
+      <Modal show={!!detailRow} onHide={() => setDetailRow(null)} centered size="xl">
         <Modal.Header closeButton>
           <Modal.Title>Request Details - REQ-{detailRow?.gate_pass_id}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {detailRow && (
             <div className="container-fluid">
-              <div className="row g-3 mb-3">
-                <div className="col-md-6"><strong>Status:</strong> {detailRow.status}</div>
-                <div className="col-md-6"><strong>Type:</strong> {detailRow.request_type}</div>
-                <div className="col-md-6"><strong>Date:</strong> {detailRow.request_date}</div>
-                <div className="col-md-6"><strong>Time:</strong> {detailRow.request_time}</div>
-              </div>
-              
-              <div className="row g-3 mb-3">
-                <div className="col-md-6"><strong>From Location:</strong> {detailRow.location}</div>
-                <div className="col-md-6"><strong>Destination:</strong> {detailRow.destination_address}</div>
-              </div>
-
-              <div className="mb-3">
-                <h6>Item Details</h6>
-                <Table striped bordered size="sm">
-                  <thead>
-                    <tr>
-                      <th>Item Name</th>
-                      <th>Description</th>
-                      <th>Quantity</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>{detailRow.item_name}</td>
-                      <td>{detailRow.description}</td>
-                      <td>{detailRow.quantity}</td>
-                    </tr>
-                  </tbody>
-                </Table>
-              </div>
-
-              <div className="mb-3">
-                <h6>Purpose</h6>
-                <p>{detailRow.purpose}</p>
-              </div>
-
-              {detailRow.additional_notes && (
-                <div className="mb-3">
-                  <h6>Additional Notes</h6>
-                  <p>{detailRow.additional_notes}</p>
+              <div className="row mb-4">
+                <div className="col-md-4">
+                  <h6>Basic Information</h6>
+                  <p><strong>Request Type:</strong> {detailRow.request_type}</p>
+                  <p><strong>Status:</strong> {detailRow.status}</p>
+                  <p><strong>Date:</strong> {detailRow.request_date}</p>
+                  <p><strong>Time:</strong> {detailRow.request_time}</p>
                 </div>
-              )}
+                <div className="col-md-4">
+                  <h6>Requester Details</h6>
+                  <p><strong>Name:</strong> {detailRow.full_name || detailRow.created_by}</p>
+                  <p><strong>Department:</strong> {detailRow.role || 'N/A'}</p>
+                  <p><strong>Email:</strong> {detailRow.email || 'N/A'}</p>
+                </div>
+                <div className="col-md-4">
+                  <h6>Location Details</h6>
+                  <p><strong>From Location:</strong> {detailRow.from_location || detailRow.location}</p>
+                  <p><strong>Destination:</strong> {detailRow.destination_address}</p>
+                  {detailRow.receiver_name && (
+                    <p><strong>Receiver Name:</strong> {detailRow.receiver_name}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-md-6">
+                  <h6>Purpose & Notes</h6>
+                  <p><strong>Purpose:</strong></p>
+                  <p className="mb-3">{detailRow.purpose}</p>
+                  {detailRow.additional_notes && (
+                    <>
+                      <p><strong>Additional Notes:</strong></p>
+                      <p>{detailRow.additional_notes}</p>
+                    </>
+                  )}
+                </div>
+                <div className="col-md-6">
+                  <h6>Transport Details</h6>
+                  <p><strong>Transport Mode:</strong> {detailRow.transport_mode || 'N/A'}</p>
+                  <p><strong>Vehicle Number:</strong> {detailRow.vehicle_number || detailRow.vehicle_no || 'N/A'}</p>
+                  <p><strong>Driver Name:</strong> {detailRow.driver_name || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h6>Material Details</h6>
+                  <Table striped bordered hover responsive>
+                    <thead>
+                      <tr>
+                        <th>Description</th>
+                        <th>Serial Number</th>
+                        <th>Quantity</th>
+                        <th>UOM</th>
+                        <th>Returnable</th>
+                        <th>Return Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailRow.materials && typeof detailRow.materials === 'string' ? (
+                        JSON.parse(detailRow.materials).map((material, index) => (
+                          <tr key={index}>
+                            <td>{material.description}</td>
+                            <td>{material.serialNumber || material.serial_number || 'N/A'}</td>
+                            <td>{material.quantity || material.qty}</td>
+                            <td>{material.uom}</td>
+                            <td>{material.isReturnable ? 'Yes' : material.returnable ? 'Yes' : 'No'}</td>
+                            <td>{material.returnDate || material.return_date || 'N/A'}</td>
+                          </tr>
+                        ))
+                      ) : detailRow.materials ? (
+                        detailRow.materials.map((material, index) => (
+                          <tr key={index}>
+                            <td>{material.description || material.item_name}</td>
+                            <td>{material.serialNumber || material.serial_number || 'N/A'}</td>
+                            <td>{material.quantity || material.qty}</td>
+                            <td>{material.uom}</td>
+                            <td>{material.isReturnable ? 'Yes' : material.returnable ? 'Yes' : 'No'}</td>
+                            <td>{material.returnDate || material.return_date || 'N/A'}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="6" className="text-center">No materials listed</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </Table>
+                </div>
+              </div>
+
+              <div className="row">
+                <div className="col-12">
+                  <h6>Remarks</h6>
+                  <p>{detailRow.remarks || 'No remarks provided'}</p>
+                </div>
+              </div>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setDetailRow(null)}>Close</Button>
+          <Button variant="secondary" onClick={() => setDetailRow(null)}>
+            Close
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>
