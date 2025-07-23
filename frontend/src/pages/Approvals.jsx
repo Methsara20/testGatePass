@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { fetchSummary, approvePass, rejectPass } from '../services/approvalService';
-import { Modal, Button, Table } from 'react-bootstrap';
+import { Modal, Button, Table, InputGroup, Form } from 'react-bootstrap';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Sidebar from '../components/Sidebar';
+import { BiSearch } from "react-icons/bi";
 
 const Approvals = () => {
   const [tab, setTab] = useState('Pending');
@@ -10,11 +11,16 @@ const Approvals = () => {
   const [approveId, setApproveId] = useState(null);
   const [rejectId, setRejectId] = useState(null);
   const [detailRow, setDetailRow] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredPasses, setFilteredPasses] = useState([]);
 
   /* fetch helper */
   const load = () =>
     fetchSummary()
-      .then((r) => setLists(r.data))
+      .then((r) => {
+        setLists(r.data);
+        setFilteredPasses(r.data[tab] || []);
+      })
       .catch((e) => console.error('Load error', e));
 
   useEffect(() => {      
@@ -32,6 +38,22 @@ const Approvals = () => {
     setRejectId(null);
     load();
   };
+
+  useEffect(() => {
+    if (searchTerm === "") {
+      setFilteredPasses(lists[tab] || []);
+    } else {
+      const filtered = (lists[tab] || []).filter(
+        (p) =>
+          p.gate_pass_id.toString().includes(searchTerm.toLowerCase()) ||
+          (p.description &&
+            p.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (p.location &&
+            p.location.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredPasses(filtered);
+    }
+  }, [searchTerm, lists, tab]);
 
   /* row */
   const Row = ({ r }) => (
@@ -81,13 +103,39 @@ const Approvals = () => {
         <h4 className="mb-1">Approvals</h4>
         <p className="text-muted">Review and manage pending gate-pass approvals.</p>
 
+        {/* Improved Search Input */}
+        <div className="mb-3">
+          <InputGroup>
+            <InputGroup.Text>
+              <BiSearch />
+            </InputGroup.Text>
+            <Form.Control
+              type="text"
+              placeholder="Search by ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <Button
+                variant="outline-secondary"
+                onClick={() => setSearchTerm("")}
+              >
+                Clear
+              </Button>
+            )}
+          </InputGroup>
+        </div>
+
         {/* Tabs */}
         <ul className="nav nav-tabs mb-3">
           {['Pending', 'Approved', 'Rejected'].map((t) => (
             <li className="nav-item" key={t}>
               <button
                 className={`nav-link ${tab === t ? 'active' : ''}`}
-                onClick={() => setTab(t)}
+                onClick={() => {
+                  setTab(t);
+                  setFilteredPasses(lists[t] || []);
+                }}
               >
                 {t}
                 <span className="badge bg-light text-dark ms-1">
@@ -112,10 +160,10 @@ const Approvals = () => {
               </tr>
             </thead>
             <tbody>
-              {lists[tab]?.map((r) => (
+              {filteredPasses.map((r) => (
                 <Row r={r} key={r.gate_pass_id} />
               ))}
-              {lists[tab]?.length === 0 && (
+              {filteredPasses.length === 0 && (
                 <tr>
                   <td colSpan="6" className="text-center py-4">
                     No records
