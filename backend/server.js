@@ -38,6 +38,7 @@ const userRoutes = require('./routes/userRoutes');
 const approvalRoutes = require('./routes/approvalRoutes');
 const passRoutes = require('./routes/passRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const locationRoutes = require('./routes/locationRoutes'); // Import location routes
 const { errorHandler } = require('./utils/errorHandler');
 const { logger } = require('./utils/logger');
 
@@ -63,6 +64,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/approvals', approvalRoutes);
 app.use('/api/passes', passRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/locations', locationRoutes); // Add location routes
+
 
 // Error handler
 app.use(errorHandler);

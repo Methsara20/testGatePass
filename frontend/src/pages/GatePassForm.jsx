@@ -297,6 +297,8 @@ const GatePassForm = () => {
           </Row>
 
           <Form.Group className="mb-3">
+          <Col md={6}>
+          <Form.Group>
             <Form.Label>Purpose</Form.Label>
             <Form.Control
               as="textarea"
@@ -305,17 +307,24 @@ const GatePassForm = () => {
               onChange={(e) => handleChange('purpose', e.target.value)}
               required
             />
+            </Form.Group>
+            </Col>
           </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Additional Notes</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={2}
-              value={formData.additional_notes}
-              onChange={(e) => handleChange('additional_notes', e.target.value)}
-            />
-          </Form.Group>
+          <Row className="mb-3">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label>Additional Notes</Form.Label>
+                <Form.Control
+                as="textarea"
+                rows={2}
+                value={formData.additional_notes}
+                onChange={(e) => handleChange('additional_notes', e.target.value)}
+              />
+              </Form.Group>
+            </Col>
+          </Row>
+
 
           <Row className="mb-3">
             <Col>
@@ -422,6 +431,7 @@ const GatePassForm = () => {
 
           {formData.destination_type === "internal" ? (
             <Form.Group className="mb-3">
+              
               <Form.Label>To Location (Internal)</Form.Label>
               <Form.Control
                 as="select"
