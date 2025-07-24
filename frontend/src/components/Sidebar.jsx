@@ -58,11 +58,11 @@ const Sidebar = () => {
                 <i className="bi bi-people me-2"></i> Users
               </Link>
             </li>
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <Link className="nav-link" to="/settings">
                 <i className="bi bi-gear me-2"></i> Settings
               </Link>
-            </li>
+            </li> */}
           </>
         )}
 

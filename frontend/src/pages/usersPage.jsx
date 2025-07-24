@@ -1,23 +1,25 @@
-// src/pages/UsersPage.jsx
 import React, { useEffect, useState } from "react";
-import { Button, Table, Modal } from "react-bootstrap";
+import { Button, Table, Modal, InputGroup, Form } from "react-bootstrap";
 import { PlusLg, PencilSquare, Trash, EyeFill } from "react-bootstrap-icons";
+import { BiSearch } from "react-icons/bi";
 import {
   getUsers,
   addUser,
   updateUser,
   deleteUser,
 } from "../services/userService";
-import UserForm from "../components/UserForm";         // ← generic form
+import UserForm from "../components/UserForm";
 import Sidebar from "../components/Sidebar";
 
 const UsersPage = () => {
   /* ─────────── state ─────────── */
-  const [users,        setUsers]        = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [showAdd,      setShowAdd]      = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null); // object or null
-  const [mode,         setMode]         = useState("view"); // "view" | "edit"
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [mode, setMode] = useState("view");
+  const [searchTerm, setSearchTerm] = useState("");
 
   /* ─────────── fetch all users ─────────── */
   const fetchUsers = async () => {
@@ -25,6 +27,7 @@ const UsersPage = () => {
     try {
       const { data } = await getUsers();
       setUsers(data);
+      setFilteredUsers(data);
     } catch (err) {
       console.error("Error fetching users:", err);
     } finally {
@@ -32,7 +35,26 @@ const UsersPage = () => {
     }
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  /* ─────────── search functionality ─────────── */
+  useEffect(() => {
+    if (searchTerm === "") {
+      setFilteredUsers(users);
+    } else {
+      const filtered = users.filter(
+        (user) =>
+          user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (user.location &&
+            user.location.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchTerm, users]);
 
   /* ─────────── CRUD handlers ─────────── */
   const handleCreate = async (payload) => {
@@ -73,9 +95,30 @@ const UsersPage = () => {
       <div className="p-4 flex-grow-1 w-100">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="mb-0 fw-semibold">All Users</h5>
-          <Button onClick={() => setShowAdd(true)}>
-            <PlusLg className="me-1" /> Add User
-          </Button>
+          <div className="d-flex">
+            <InputGroup style={{ width: "300px" }} className="me-3">
+              <InputGroup.Text>
+                <BiSearch />
+              </InputGroup.Text>
+              <Form.Control
+                type="text"
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => setSearchTerm("")}
+                >
+                  Clear
+                </Button>
+              )}
+            </InputGroup>
+            <Button onClick={() => setShowAdd(true)}>
+              <PlusLg className="me-1" /> Add User
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -84,7 +127,7 @@ const UsersPage = () => {
           <Table hover responsive className="align-middle">
             <thead className="table-light">
               <tr>
-                <th>Full&nbsp;Name</th>
+                <th>Full Name</th>
                 <th>Role</th>
                 <th>Email</th>
                 <th>Location</th>
@@ -92,7 +135,7 @@ const UsersPage = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {filteredUsers.map((u) => (
                 <tr key={u.id}>
                   <td>{u.full_name}</td>
                   <td>{u.role}</td>
@@ -129,10 +172,10 @@ const UsersPage = () => {
                   </td>
                 </tr>
               ))}
-              {users.length === 0 && (
+              {filteredUsers.length === 0 && (
                 <tr>
                   <td colSpan="5" className="text-center py-4">
-                    No users found
+                    {searchTerm ? "No matching users found" : "No users found"}
                   </td>
                 </tr>
               )}
@@ -152,7 +195,7 @@ const UsersPage = () => {
           </Modal.Header>
           <Modal.Body>
             <UserForm
-              key="new"                 /* keeps form empty each time */
+              key="new" /* keeps form empty each time */
               submitLabel="Create User"
               onSubmit={handleCreate}
             />
@@ -176,19 +219,31 @@ const UsersPage = () => {
             {/* View mode */}
             {selectedUser && mode === "view" && (
               <div className="vstack gap-2">
-                <div><strong>Full Name:</strong> {selectedUser.full_name}</div>
-                <div><strong>Role:</strong> {selectedUser.role}</div>
-                <div><strong>Email:</strong> {selectedUser.email}</div>
-                <div><strong>Phone:</strong> {selectedUser.phone_number || "-"}</div>
-                <div><strong>Location:</strong> {selectedUser.location || "-"}</div>
-                <div><strong>Username:</strong> {selectedUser.username}</div>
+                <div>
+                  <strong>Full Name:</strong> {selectedUser.full_name}
+                </div>
+                <div>
+                  <strong>Role:</strong> {selectedUser.role}
+                </div>
+                <div>
+                  <strong>Email:</strong> {selectedUser.email}
+                </div>
+                <div>
+                  <strong>Phone:</strong> {selectedUser.phone_number || "-"}
+                </div>
+                <div>
+                  <strong>Location:</strong> {selectedUser.location || "-"}
+                </div>
+                <div>
+                  <strong>Username:</strong> {selectedUser.username}
+                </div>
               </div>
             )}
 
             {/* Edit mode */}
             {selectedUser && mode === "edit" && (
               <UserForm
-                key={selectedUser.id}   /* forces fresh mount per user */
+                key={selectedUser.id} /* forces fresh mount per user */
                 initialValues={selectedUser}
                 submitLabel="Update User"
                 onSubmit={handleUpdate}
