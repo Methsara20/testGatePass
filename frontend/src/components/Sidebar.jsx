@@ -30,33 +30,33 @@ const Sidebar = () => {
       
       <ul className="nav flex-column">
         {/* Main Navigation */}
-        <li className="nav-item mb-2">
+        <li className="nav-item mb-1">
           <Link className="nav-link py-2 px-3 rounded" to="/dashboard">
-            <i className="bi bi-speedometer2 me-2"></i> Dashboard
+            <i className="bi bi-speedometer2 me-1"></i> Dashboard
           </Link>
         </li>
-        
-        <li className="nav-item mb-2">
+
+        <li className="nav-item mb-1">
           <Link className="nav-link py-2 px-3 rounded" to="/gatepass/new">
-            <i className="bi bi-pencil-square me-2"></i> New Gate-Pass
+            <i className="bi bi-pencil-square me-1"></i> New Gate-Pass
           </Link>
         </li>
 
         <li className="nav-item mb-2">
           <Link className="nav-link py-2 px-3 rounded" to="/my-requests">
-            <i className="bi bi-list-check me-2"></i> My Requests
+            <i className="bi bi-list-check me-1"></i> My Requests
           </Link>
         </li>
 
         <li className="nav-item mb-2">
           <Link className="nav-link py-2 px-3 rounded" to="/approvals">
-            <i className="bi bi-check2-square me-2"></i> Approvals
+            <i className="bi bi-check2-square me-1"></i> Approvals
           </Link>
         </li>
 
         <li className="nav-item mb-2">
           <Link className="nav-link py-2 px-3 rounded" to="/deliveries">
-            <i className="bi bi-truck me-2"></i> Gatepasses
+            <i className="bi bi-truck me-1"></i> Gatepasses
           </Link>
         </li>
 
@@ -67,12 +67,12 @@ const Sidebar = () => {
             <h6 className="text-muted px-3 mb-2">Admin</h6>
             <li className="nav-item mb-2">
               <Link className="nav-link py-2 px-3 rounded" to="/users">
-                <i className="bi bi-people me-2"></i> Users
+                <i className="bi bi-people me-1"></i> Users
               </Link>
             </li>
             <li className="nav-item mb-2">
               <Link className="nav-link py-2 px-3 rounded" to="/locations">
-                <i className="bi bi-geo-alt me-2"></i> Locations
+                <i className="bi bi-geo-alt me-1"></i> Locations
               </Link>
             </li>
           </>
@@ -81,7 +81,7 @@ const Sidebar = () => {
         <hr className="my-3" />
         <li className="nav-item">
           <Link className="nav-link py-2 px-3 rounded text-danger" to="/logout">
-            <i className="bi bi-box-arrow-right me-2"></i> Logout
+            <i className="bi bi-box-arrow-right me-1"></i> Logout
           </Link>
         </li>
       </ul>

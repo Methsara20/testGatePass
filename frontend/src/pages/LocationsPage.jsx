@@ -105,9 +105,7 @@ const LocationsPage = () => {
                     <Button variant="warning" size="sm" onClick={() => handleEdit(loc)} className="me-2">
                       Edit
                     </Button>
-                    <Button variant="info" size="sm" onClick={() => handleCopy(loc.location_name)} className="me-2">
-                      Copy
-                    </Button>
+                    
                     <Button variant="danger" size="sm" onClick={() => handleDelete(loc.location_id)}>
                       Delete
                     </Button>

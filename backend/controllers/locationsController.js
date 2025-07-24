@@ -38,3 +38,5 @@ exports.updateLocation = (req, res) => {
     res.json({ message: 'Location updated successfully' });
   });
 };
+
+

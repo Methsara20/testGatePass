@@ -1,7 +1,7 @@
-// src/pages/Login.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/authService';
+import { getLocations } from '../services/locationService'; // Import location service
 import { useAuth } from '../context/AuthContext';
 import { validateEmail, validateRequired } from '../utils/validators';
 import PasswordResetHelp from "../components/PasswordResetHelp";
@@ -10,11 +10,36 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [location, setLocation] = useState('');
+  const [locations, setLocations] = useState([]); // State for locations
   const [error, setError] = useState('');
   const [showHelp, setShowHelp] = useState(false);
+  const [loadingLocations, setLoadingLocations] = useState(false);
 
   const navigate = useNavigate();
   const { setUser } = useAuth();
+
+  // Fetch locations on component mount
+  useEffect(() => {
+    const fetchLocations = async () => {
+      setLoadingLocations(true);
+      try {
+        const locationsData = await getLocations();
+        if (Array.isArray(locationsData)) {
+          setLocations(locationsData);
+        } else {
+          console.error('Unexpected locations format:', locationsData);
+          setLocations([]);
+        }
+      } catch (err) {
+        console.error('Failed to load locations:', err);
+        setLocations([]);
+      } finally {
+        setLoadingLocations(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,7 +66,7 @@ const Login = () => {
           navigate('/gatepass/new');
           break;
         default:
-          navigate('/dashboard'); // fallback
+          navigate('/dashboard');
       }
     } catch (err) {
       setError('Invalid credentials or server error.');
@@ -55,24 +80,52 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label">Location</label>
-            <select className="form-select" value={location} onChange={(e) => setLocation(e.target.value)}>
+            <select
+              className="form-select"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              disabled={loadingLocations}
+              required
+            >
               <option value="">Select your location</option>
-              <option value="CPHO">CPHO</option>
-              <option value="Colombo Office">Colombo Office</option>
-              <option value="Branch B">Branch B</option>
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.name}>
+                  {loc.name}
+                </option>
+              ))}
             </select>
+            {loadingLocations && (
+              <small className="text-muted">Loading locations...</small>
+            )}
+            {!loadingLocations && locations.length === 0 && (
+              <small className="text-danger">No locations available</small>
+            )}
           </div>
           <div className="mb-3">
             <label className="form-label">Email</label>
-            <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input
+              type="email"
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           <div className="mb-3">
             <label className="form-label">Password</label>
-            <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <input
+              type="password"
+              className="form-control"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
           {error && <div className="alert alert-danger py-1">{error}</div>}
           <div className="d-grid">
-            <button type="submit" className="btn btn-primary">Sign In</button>
+            <button type="submit" className="btn btn-primary">
+              Sign In
+            </button>
           </div>
         </form>
         <div className="text-end mt-2">
