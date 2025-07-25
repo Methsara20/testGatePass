@@ -9,13 +9,13 @@ exports.getUsers = (req, res) => {
 
 exports.addUser = (req, res) => {
     
-    const { username, password, full_name, role, email, phone_number, location } = req.body;
+    const { username, password, full_name, role, email, phone_number, location, department } = req.body;
 
     const query = `
-        INSERT INTO users (username, password, full_name, role, email, phone_number, location)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (username, password, full_name, role, email, phone_number, location, department)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    db.query(query, [username, password, full_name, role, email, phone_number, location], (err, result) => {
+    db.query(query, [username, password, full_name, role, email, phone_number, location, department ], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         res.status(201).json({ message: 'User created successfully', userId: result.insertId });
     });
@@ -25,14 +25,14 @@ exports.addUser = (req, res) => {
 exports.updateUser = (req, res) => {
     
     const { id } = req.params;
-    const { username, full_name, role, email, phone_number, location } = req.body;
+    const { username, full_name, role, email, phone_number, location, department  } = req.body;
 
     const query = `
         UPDATE users
-        SET username = ?, full_name = ?, role = ?, email = ?, phone_number = ?, location = ?
+        SET username = ?, full_name = ?, role = ?, email = ?, phone_number = ?, location = ?, department = ?
         WHERE id = ?
     `;
-    db.query(query, [username, full_name, role, email, phone_number, location, id], (err, result) => {
+    db.query(query, [username, full_name, role, email, phone_number, location, department , id], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'User not found' });

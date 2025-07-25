@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Form, Button, Row, Col, InputGroup } from "react-bootstrap";
 import {
   PersonFill, EnvelopeFill, ShieldLockFill,
-  TelephoneFill, GeoAltFill, PersonBadge
+  TelephoneFill, PersonBadge
 } from "react-bootstrap-icons";
 import { getLocations } from "../services/locationService";
+import { getDepartments } from "../services/departmentService";
 
 const roles = ["Admin", "HOD", "User"];
 
@@ -15,14 +16,17 @@ export default function UserForm({
 }) {
   const empty = {
     username: "", password: "", full_name: "",
-    role: "User", email: "", phone_number: "", location: ""
+    role: "User", email: "", phone_number: "", 
+    location: "", department: ""
   };
 
   const [form, setForm] = useState(initialValues || empty);
   const [locations, setLocations] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [locationsError, setLocationsError] = useState(null);
+  const [departmentsError, setDepartmentsError] = useState(null);
 
   useEffect(() => {
     setForm(initialValues || empty);
@@ -33,22 +37,39 @@ export default function UserForm({
       try {
         const locationsData = await getLocations();
         
-        // Final validation
         if (!Array.isArray(locationsData)) {
-          console.error("Invalid locations data:", locationsData);
           throw new Error("Received non-array locations data");
         }
         
         setLocations(locationsData);
       } catch (error) {
-        console.error("Failed to load locations:", error);
-        setLocations([]); // Fallback to empty array
+        setLocationsError("Failed to load locations");
+        setLocations([]);
       }
     };
     
     fetchLocations();
   }, []);
 
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await getDepartments();
+        const departmentsData = response.data ? response.data : response;
+        
+        if (!Array.isArray(departmentsData)) {
+          throw new Error("Expected array but got: " + typeof departmentsData);
+        }
+        
+        setDepartments(departmentsData);
+      } catch (error) {
+        setDepartmentsError("Failed to load departments");
+        setDepartments([]);
+      }
+    };
+    fetchDepartments();
+  }, []);
+  
   const handleChange = e =>
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -70,6 +91,7 @@ export default function UserForm({
     <>
       {error && <div className="alert alert-danger py-2">{error}</div>}
       {locationsError && <div className="alert alert-warning py-2">{locationsError}</div>}
+      {departmentsError && <div className="alert alert-warning py-2">{departmentsError}</div>}
 
       <Form onSubmit={handleSubmit} autoComplete="off">
         {/* username */}
@@ -128,16 +150,16 @@ export default function UserForm({
           </InputGroup>
         </Form.Group>
 
-        {/* role & location */}
+        {/* role, location & department */}
         <Row className="mb-3">
-          <Col md={6}>
+          <Col md={4}>
             <Form.Label>Role</Form.Label>
             <Form.Select name="role" value={form.role} onChange={handleChange}>
               {roles.map(r => <option key={r}>{r}</option>)}
             </Form.Select>
           </Col>
 
-          <Col md={6} className="pt-md-0 pt-3">
+          <Col md={4}>
             <Form.Label>Location</Form.Label>
             <Form.Select
               name="location"
@@ -154,6 +176,29 @@ export default function UserForm({
             </Form.Select>
             {locations.length === 0 && !locationsError && (
               <small className="text-muted">Loading locations...</small>
+            )}
+          </Col>
+
+          <Col md={4}>
+            <Form.Label>Department</Form.Label>
+            <Form.Select
+              name="department"
+              value={form.department}
+              onChange={handleChange}
+              disabled={departmentsError || departments.length === 0}
+            >
+              <option value="">-- Select Department --</option>
+              {departments.map(dep => (
+                <option 
+                  key={dep.department_id || dep.id} 
+                  value={dep.department_name || dep.name}
+                >
+                  {dep.department_name || dep.name}
+                </option>
+              ))}
+            </Form.Select>
+            {departments.length === 0 && !departmentsError && (
+              <small className="text-muted">Loading departments...</small>
             )}
           </Col>
         </Row>
