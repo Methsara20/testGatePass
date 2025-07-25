@@ -3,12 +3,15 @@ import { Form, Button, Table, Row, Col, Alert, Spinner } from "react-bootstrap";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
+import { getDepartments } from "../services/departmentService";
 
 const GatePassForm = () => {
   const { user } = useAuth();
   const [loadingUser, setLoadingUser] = useState(true);
   const [locations, setLocations] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
 
   const [formData, setFormData] = useState({
     request_type: "Outward",
@@ -23,6 +26,7 @@ const GatePassForm = () => {
     from_location: "CPHO",
     destination_type: "internal",
     to_location_internal: "",
+    to_department_internal: "",
     destination_address: "",
     purpose: "",
     additional_notes: "",
@@ -54,33 +58,40 @@ const GatePassForm = () => {
   const [isDraft, setIsDraft] = useState(false);
 
   useEffect(() => {
-    const fetchLocations = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/locations");
-        setLocations(response.data);
+        // Fetch locations and departments in parallel
+        const [locationsResponse, departmentsResponse] = await Promise.all([
+          axios.get("http://localhost:5000/api/locations"),
+          getDepartments()
+        ]);
+
+        setLocations(locationsResponse.data);
+        setDepartments(departmentsResponse.data);
+
+        if (user) {
+          setLoadingUser(false);
+          setFormData(prev => ({
+            ...prev,
+            employee_id: user.id,
+            created_by: user.id,
+            full_name: user.full_name || "",
+            department: user.department || user.role || "",
+            email: user.email || "",
+            phone: user.phone_number || "",
+            from_location: user.location || ""
+          }));
+        }
       } catch (err) {
-        console.error("Error fetching locations:", err);
-        setError("Failed to load locations. Please try again later.");
+        console.error("Error fetching data:", err);
+        setError("Failed to load required data. Please try again later.");
       } finally {
         setLoadingLocations(false);
+        setLoadingDepartments(false);
       }
     };
 
-    fetchLocations();
-
-    if (user) {
-      setLoadingUser(false);
-      setFormData(prev => ({
-        ...prev,
-        employee_id: user.id,
-        created_by: user.id,
-        full_name: user.full_name || "",
-        department: user.role || "",
-        email: user.email || "",
-        phone: user.phone_number || "",
-        from_location: user.location || ""
-      }));
-    }
+    fetchData();
   }, [user]);
 
   const handleChange = (field, value) => {
@@ -119,32 +130,32 @@ const GatePassForm = () => {
   const handleSubmit = async (e, isDraftSubmit = false) => {
     e.preventDefault();
     setError("");
-
+  
     if (!formData.created_by) {
       setError("No valid user ID found. Please ensure you're logged in.");
       return;
     }
-
+  
     if (!isDraftSubmit) {
       if (!formData.purpose) {
         setError("Please enter a purpose");
         return;
       }
-
+  
       if (materials.some(m => !m.description || !m.qty || !m.uom)) {
         setError("Please fill all required material fields");
         return;
       }
-
+  
       if (formData.destination_type === "external" && !formData.receiver_name) {
         setError("Please enter receiver name for external destinations");
         return;
       }
     }
-
+  
     try {
       const formDataToSend = new FormData();
-
+  
       const dbPayload = {
         request_type: formData.request_type,
         request_date: formData.request_date,
@@ -156,6 +167,11 @@ const GatePassForm = () => {
         is_draft: isDraftSubmit,
         is_printable: 0,
         delivery_status: "Waiting",
+        // Store department separately
+        department: formData.destination_type === "internal" 
+          ? formData.to_department_internal 
+          : "",
+        // Store destination address appropriately
         destination_address: formData.destination_type === "internal"
           ? formData.to_location_internal
           : formData.destination_address,
@@ -168,27 +184,27 @@ const GatePassForm = () => {
         receiver_name: formData.receiver_name || "",
         delivery_comment: formData.delivery_comment || ""
       };
-
+  
       Object.entries(dbPayload).forEach(([key, value]) => {
         formDataToSend.append(key, value);
       });
-
+  
       formDataToSend.append('materials', JSON.stringify(materials));
-
+  
       if (formData.document) {
         formDataToSend.append('document', formData.document);
       }
-
+  
       const response = await axios.post("http://localhost:5000/api/passes", formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-
+  
       setSubmitted(true);
       setIsDraft(isDraftSubmit);
       setGatePassId(response.data.gatePassId);
-
+  
       if (!isDraftSubmit) {
         setFormData({
           ...formData,
@@ -197,6 +213,7 @@ const GatePassForm = () => {
           request_time: new Date().toTimeString().substring(0, 5),
           destination_type: "internal",
           to_location_internal: "",
+          to_department_internal: "",
           destination_address: "",
           purpose: "",
           additional_notes: "",
@@ -211,7 +228,7 @@ const GatePassForm = () => {
           is_draft: false,
           document: null
         });
-
+  
         setMaterials([{
           id: Date.now(),
           description: "",
@@ -222,7 +239,7 @@ const GatePassForm = () => {
           return_date: ""
         }]);
       }
-
+  
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Failed to submit. Please try again.";
       setError(errorMessage);
@@ -445,29 +462,58 @@ const GatePassForm = () => {
           </Form.Group>
 
           {formData.destination_type === "internal" ? (
-            <Form.Group className="mb-3">
-              <Form.Label>To Location (Internal)</Form.Label>
-              {loadingLocations ? (
-                <div className="d-flex align-items-center">
-                  <Spinner animation="border" size="sm" className="me-2" />
-                  <span>Loading locations...</span>
-                </div>
-              ) : (
-                <Form.Control
-                  as="select"
-                  value={formData.to_location_internal}
-                  onChange={(e) => handleChange('to_location_internal', e.target.value)}
-                  required
-                >
-                  <option value="">Select Location</option>
-                  {locations.map((location) => (
-                    <option key={location.location_id} value={location.location_name}>
-                      {location.location_name}
-                    </option>
-                  ))}
-                </Form.Control>
-              )}
-            </Form.Group>
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>To Location (Internal)</Form.Label>
+                  {loadingLocations ? (
+                    <div className="d-flex align-items-center">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      <span>Loading locations...</span>
+                    </div>
+                  ) : (
+                    <Form.Control
+                      as="select"
+                      value={formData.to_location_internal}
+                      onChange={(e) => handleChange('to_location_internal', e.target.value)}
+                      required
+                    >
+                      <option value="">Select Location</option>
+                      {locations.map((location) => (
+                        <option key={location.location_id} value={location.location_name}>
+                          {location.location_name}
+                        </option>
+                      ))}
+                    </Form.Control>
+                  )}
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>To Department (Internal)</Form.Label>
+                  {loadingDepartments ? (
+                    <div className="d-flex align-items-center">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      <span>Loading departments...</span>
+                    </div>
+                  ) : (
+                    <Form.Control
+                      as="select"
+                      value={formData.to_department_internal}
+                      onChange={(e) => handleChange('to_department_internal', e.target.value)}
+                      required
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((dept) => (
+                        <option key={dept.department_id} value={dept.department_name}>
+                          {dept.department_name}
+                        </option>
+                      ))}
+                    </Form.Control>
+                  )}
+                </Form.Group>
+              </Col>
+            </Row>
           ) : (
             <>
               <Form.Group className="mb-3">

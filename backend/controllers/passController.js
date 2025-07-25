@@ -26,6 +26,7 @@ exports.addGatepass = (req, res) => {
       delivery_comment,
       receiver_name,
       destination_address,
+      department, 
       transport_mode,
       vehicle_no,
       driver_name,
@@ -46,14 +47,14 @@ exports.addGatepass = (req, res) => {
       INSERT INTO gate_pass_requests (
         request_type, request_date, request_time, location, purpose,
         additional_notes, status, is_draft, is_printable, delivery_status,
-        delivery_comment, receiver_name, destination_address, transport_mode,
+        delivery_comment, receiver_name, destination_address, department, transport_mode,
         vehicle_no, driver_name, remarks, created_by, approved_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const values = [
       request_type, request_date, request_time, location, purpose,
       additional_notes, status, is_draft, is_printable, delivery_status,
-      delivery_comment, receiver_name, destination_address, transport_mode,
+      delivery_comment, receiver_name, destination_address,department, transport_mode,
       vehicle_no, driver_name, remarks, created_by, approved_by
     ];
 
@@ -110,6 +111,7 @@ exports.updateGatepass = (req, res) => {
     delivery_comment,
     receiver_name,
     destination_address,
+    department,
     transport_mode,
     vehicle_no,
     driver_name,
@@ -123,7 +125,7 @@ exports.updateGatepass = (req, res) => {
     SET request_type = ?, request_date = ?, request_time = ?, location = ?,
         purpose = ?, additional_notes = ?, status = ?, is_draft = ?, is_printable = ?,
         delivery_status = ?, delivery_comment = ?, receiver_name = ?,
-        destination_address = ?, transport_mode = ?, vehicle_no = ?,
+        destination_address = ?, department = ?, transport_mode = ?, vehicle_no = ?,
         driver_name = ?, remarks = ?, created_by = ?, approved_by = ?
     WHERE gate_pass_id = ?`;
 
@@ -131,7 +133,7 @@ exports.updateGatepass = (req, res) => {
     request_type, request_date, request_time, location,
     purpose, additional_notes, status, is_draft, is_printable,
     delivery_status, delivery_comment, receiver_name,
-    destination_address, transport_mode, vehicle_no,
+    destination_address, department, transport_mode, vehicle_no,
     driver_name, remarks, created_by, approved_by, id
   ], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
