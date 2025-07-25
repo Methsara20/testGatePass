@@ -4,7 +4,8 @@ import Dashboard from '../pages/Dashboard';
 import Requests from '../pages/Requests';
 import GatePassForm from '../pages/GatePassForm';
 import UsersPage from '../pages/usersPage';
-import LocationsPage from '../pages/LocationsPage'; 
+import LocationsPage from '../pages/LocationsPage';
+import DepartmentsPage from '../pages/DepartmentsPage'; 
 import { useAuth } from '../context/AuthContext';
 import Approvals from '../pages/Approvals';
 import MyRequests from '../pages/MyRequests';
@@ -40,6 +41,8 @@ const AppRoutes = () => {
         {/* ✅ Updated Users routes */}
         <Route path="/users" element={<ProtectedRoute allowedRoles={['Admin']}><UsersPage /></ProtectedRoute>} />
         <Route path="/locations" element={<ProtectedRoute allowedRoles={['Admin']}><LocationsPage /></ProtectedRoute>} />
+        <Route path="/departments" element={<ProtectedRoute allowedRoles={['Admin']}><DepartmentsPage /></ProtectedRoute>} />
+
 
         <Route path="/unauthorized" element={<h3 className="text-center mt-5">Unauthorized Access</h3>} />
         <Route path="*" element={<Navigate to="/login" />} />

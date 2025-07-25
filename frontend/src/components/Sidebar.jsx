@@ -75,6 +75,11 @@ const Sidebar = () => {
                 <i className="bi bi-geo-alt me-1"></i> Locations
               </Link>
             </li>
+            <li className="nav-item mb-2">
+              <Link className="nav-link py-2 px-3 rounded" to="/departments">
+                <i className="bi bi-building me-1"></i> Departments
+              </Link>
+            </li>
           </>
         )}
 
