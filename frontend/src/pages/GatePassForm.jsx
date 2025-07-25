@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Form, Button, Table, Row, Col, Alert } from "react-bootstrap";
+import { Form, Button, Table, Row, Col, Alert, Spinner } from "react-bootstrap";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
@@ -7,6 +7,8 @@ import { useAuth } from "../context/AuthContext";
 const GatePassForm = () => {
   const { user } = useAuth();
   const [loadingUser, setLoadingUser] = useState(true);
+  const [locations, setLocations] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
 
   const [formData, setFormData] = useState({
     request_type: "Outward",
@@ -52,6 +54,20 @@ const GatePassForm = () => {
   const [isDraft, setIsDraft] = useState(false);
 
   useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/locations");
+        setLocations(response.data);
+      } catch (err) {
+        console.error("Error fetching locations:", err);
+        setError("Failed to load locations. Please try again later.");
+      } finally {
+        setLoadingLocations(false);
+      }
+    };
+
+    fetchLocations();
+
     if (user) {
       setLoadingUser(false);
       setFormData(prev => ({
@@ -297,17 +313,17 @@ const GatePassForm = () => {
           </Row>
 
           <Form.Group className="mb-3">
-          <Col md={6}>
-          <Form.Group>
-            <Form.Label>Purpose</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={2}
-              value={formData.purpose}
-              onChange={(e) => handleChange('purpose', e.target.value)}
-              required
-            />
-            </Form.Group>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label>Purpose</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  value={formData.purpose}
+                  onChange={(e) => handleChange('purpose', e.target.value)}
+                  required
+                />
+              </Form.Group>
             </Col>
           </Form.Group>
 
@@ -316,15 +332,14 @@ const GatePassForm = () => {
               <Form.Group>
                 <Form.Label>Additional Notes</Form.Label>
                 <Form.Control
-                as="textarea"
-                rows={2}
-                value={formData.additional_notes}
-                onChange={(e) => handleChange('additional_notes', e.target.value)}
-              />
+                  as="textarea"
+                  rows={2}
+                  value={formData.additional_notes}
+                  onChange={(e) => handleChange('additional_notes', e.target.value)}
+                />
               </Form.Group>
             </Col>
           </Row>
-
 
           <Row className="mb-3">
             <Col>
@@ -431,28 +446,27 @@ const GatePassForm = () => {
 
           {formData.destination_type === "internal" ? (
             <Form.Group className="mb-3">
-              
               <Form.Label>To Location (Internal)</Form.Label>
-              <Form.Control
-                as="select"
-                value={formData.to_location_internal}
-                onChange={(e) => handleChange('to_location_internal', e.target.value)}
-                required
-              >
-                <option value="">Select Location</option>
-                <option value="CPHO">CPHO</option>
-                <option value="CPH">CPH</option>
-                <option value="CPM">CPM</option>
-                <option value="CPN">CPN</option>
-                <option value="CPW">CPW</option>
-                <option value="CPK">CPK</option>
-                <option value="CPP">CPP</option>
-                <option value="CPC">CPC</option>
-                <option value="CPR">CPR</option>
-                <option value="OGF">OGF</option>
-                <option value="CPG">CPG</option>
-                <option value="MONSTONE">CPP</option>
-              </Form.Control>
+              {loadingLocations ? (
+                <div className="d-flex align-items-center">
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  <span>Loading locations...</span>
+                </div>
+              ) : (
+                <Form.Control
+                  as="select"
+                  value={formData.to_location_internal}
+                  onChange={(e) => handleChange('to_location_internal', e.target.value)}
+                  required
+                >
+                  <option value="">Select Location</option>
+                  {locations.map((location) => (
+                    <option key={location.location_id} value={location.location_name}>
+                      {location.location_name}
+                    </option>
+                  ))}
+                </Form.Control>
+              )}
             </Form.Group>
           ) : (
             <>
@@ -648,7 +662,6 @@ const GatePassForm = () => {
           >
             <i className="bi bi-plus-circle"></i> Add Material
           </Button>
-
 
           <Form.Group className="mb-3">
             <Form.Label>Supporting Document (optional)</Form.Label>
