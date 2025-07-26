@@ -187,14 +187,14 @@ const GatePassForm = () => {
         formDataToSend.append(key, value);
       });
   
-      // Prepare materials data matching backend table structure
+      // Prepare materials data exactly matching backend table structure
       const materialsToSend = materials.map(material => ({
         description: material.description,
-        serial_number: material.serial_number,  // Matches column name in DB
+        serial_number: material.serial_number || null, // Ensure field exists even if empty
         qty: material.qty,
         uom: material.uom,
-        returnable: material.returnable ? 1 : 0, // Convert boolean to tinyint (1 or 0)
-        return_date: material.return_date || null
+        returnable: material.returnable ? 1 : 0, // Convert to tinyint
+        return_date: material.returnable ? material.return_date || null : null // Only include if returnable
       }));
   
       formDataToSend.append('materials', JSON.stringify(materialsToSend));
@@ -254,7 +254,7 @@ const GatePassForm = () => {
       console.error("Submission error:", err.response?.data || err.message);
     }
   };
-
+  
   if (loadingUser) {
     return (
       <div className="d-flex">

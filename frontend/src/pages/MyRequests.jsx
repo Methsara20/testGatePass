@@ -35,7 +35,9 @@ const MyRequests = () => {
           (p.description &&
             p.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (p.location &&
-            p.location.toLowerCase().includes(searchTerm.toLowerCase()))
+            p.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (p.department &&
+            p.department.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredPasses(filtered);
     }
@@ -52,7 +54,10 @@ const MyRequests = () => {
         requester_email: res.data.requester_email || res.data.email || 'N/A',
         requester_role: res.data.requester_role || res.data.role || 'N/A',
         requester_phone: res.data.requester_phone || 'N/A',
-        requester_location: res.data.requester_location || 'N/A'
+        requester_location: res.data.requester_location || 'N/A',
+        // Add department fields
+        from_department: res.data.department || res.data.requester_role || 'N/A',
+        to_department: res.data.to_department_internal || res.data.to_department || 'N/A'
       });
     } catch (error) {
       console.error("Error fetching gate pass details:", error);
@@ -77,7 +82,7 @@ const MyRequests = () => {
       <td>
         <i
           className="bi bi-eye text-primary cursor-pointer"
-          onClick={() => handleViewDetails(r.gate_pass_id)} // Updated to use the new handler
+          onClick={() => handleViewDetails(r.gate_pass_id)}
         />
       </td>
     </tr>
@@ -97,7 +102,7 @@ const MyRequests = () => {
             </InputGroup.Text>
             <Form.Control
               type="text"
-              placeholder="Search by ID..."
+              placeholder="Search by ID, location or department..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -176,15 +181,20 @@ const MyRequests = () => {
                   <p><strong>Location:</strong> {detailRow.requester_location || 'N/A'}</p>
                 </div>
                 <div className="col-md-4">
-                  <h6>Location Details</h6>
+                  <h6>Destination Details</h6>
                   <p><strong>From Location:</strong> {detailRow.from_location || detailRow.location}</p>
-                  <p><strong>Destination:</strong> {detailRow.destination_address}</p>
+                  <p><strong>To Department:</strong> {detailRow.from_department || 'N/A'}</p>
+                  
+                  <p><strong>Destination:</strong> {detailRow.destination_type === 'internal' ? 
+                    `${detailRow.to_location_internal || detailRow.destination_address}` : 
+                    detailRow.destination_address}</p>
                   {detailRow.receiver_name && (
                     <p><strong>Receiver Name:</strong> {detailRow.receiver_name}</p>
                   )}
                 </div>
               </div>
 
+              {/* Rest of the modal content remains the same */}
               <div className="row mb-4">
                 <div className="col-md-6">
                   <h6>Purpose & Notes</h6>

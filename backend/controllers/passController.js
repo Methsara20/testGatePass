@@ -72,11 +72,11 @@ exports.addGatepass = (req, res) => {
         const materialValues = materials.map(item => [
           gatePassId,
           item.description,
-          item.serial,
+          item.serial_number,
           item.qty,
           item.uom,
-          item.returnable,
-          item.returnable ? item.returnDate : null
+          item.returnable ? 1 : 0, 
+          item.returnable ? (item.return_date || null) : null
         ]);
 
         db.query(insertMaterialQuery, [materialValues], (matErr) => {
