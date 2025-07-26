@@ -167,11 +167,9 @@ const GatePassForm = () => {
         is_draft: isDraftSubmit,
         is_printable: 0,
         delivery_status: "Waiting",
-        // Store department separately
         department: formData.destination_type === "internal" 
           ? formData.to_department_internal 
           : "",
-        // Store destination address appropriately
         destination_address: formData.destination_type === "internal"
           ? formData.to_location_internal
           : formData.destination_address,
@@ -189,7 +187,17 @@ const GatePassForm = () => {
         formDataToSend.append(key, value);
       });
   
-      formDataToSend.append('materials', JSON.stringify(materials));
+      // Prepare materials data matching backend table structure
+      const materialsToSend = materials.map(material => ({
+        description: material.description,
+        serial_number: material.serial_number,  // Matches column name in DB
+        qty: material.qty,
+        uom: material.uom,
+        returnable: material.returnable ? 1 : 0, // Convert boolean to tinyint (1 or 0)
+        return_date: material.return_date || null
+      }));
+  
+      formDataToSend.append('materials', JSON.stringify(materialsToSend));
   
       if (formData.document) {
         formDataToSend.append('document', formData.document);

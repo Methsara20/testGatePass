@@ -4,7 +4,7 @@ import { Modal, Button, Table, InputGroup, Form } from 'react-bootstrap';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Sidebar from '../components/Sidebar';
 import { BiSearch } from "react-icons/bi";
-import { getUserById } from '../services/userService'; // Add this import
+import { getUserById } from '../services/userService';
 
 const Approvals = () => {
   const [tab, setTab] = useState('Pending');
@@ -14,6 +14,7 @@ const Approvals = () => {
   const [detailRow, setDetailRow] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPasses, setFilteredPasses] = useState([]);
+  const [requesterDetails, setRequesterDetails] = useState(null);
 
   /* fetch helper */
   const load = () =>
@@ -26,7 +27,7 @@ const Approvals = () => {
 
   useEffect(() => {      
     load();              
-  }, []); /* initial load */
+  }, []);
 
   /* actions */
   const doApprove = async () => {
@@ -50,7 +51,9 @@ const Approvals = () => {
           (p.description &&
             p.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (p.location &&
-            p.location.toLowerCase().includes(searchTerm.toLowerCase()))
+            p.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (p.department &&
+            p.department.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredPasses(filtered);
     }
@@ -59,12 +62,24 @@ const Approvals = () => {
   const handleViewDetails = async (id) => {
     try {
       const res = await fetchGatePassWithMaterials(id);
-      setDetailRow(res.data);
+      const passData = res.data;
+      
+      // Fetch requester details if created_by exists
+      if (passData.created_by) {
+        try {
+          const userRes = await getUserById(passData.created_by);
+          setRequesterDetails(userRes.data);
+        } catch (error) {
+          console.error("Error fetching user details:", error);
+          setRequesterDetails(null);
+        }
+      }
+      
+      setDetailRow(passData);
     } catch (error) {
       console.error("Error fetching gate pass details:", error);
     }
   };
-  
 
   /* row */
   const Row = ({ r }) => (
@@ -122,7 +137,7 @@ const Approvals = () => {
             </InputGroup.Text>
             <Form.Control
               type="text"
-              placeholder="Search by ID..."
+              placeholder="Search by ID, location or department..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -217,7 +232,6 @@ const Approvals = () => {
           </Modal.Footer>
         </Modal>
 
-
         {/* Enhanced Details modal */}
         <Modal show={!!detailRow} onHide={() => setDetailRow(null)} centered size="xl">
           <Modal.Header closeButton>
@@ -236,21 +250,23 @@ const Approvals = () => {
                   </div>
                   <div className="col-md-4">
                     <h6>Requester Details</h6>
-                    <p><strong>Name:</strong> {detailRow.requester_name || 'N/A'}</p>
-                    <p><strong>Email:</strong> {detailRow.requester_email || 'N/A'}</p>
-                    <p><strong>Role:</strong> {detailRow.requester_role || 'N/A'}</p>
-                    <p><strong>Phone:</strong> {detailRow.requester_phone || 'N/A'}</p>
-                    <p><strong>Location:</strong> {detailRow.requester_location || 'N/A'}</p>
+                    <p><strong>Name:</strong> {requesterDetails?.full_name || detailRow.requester_name || 'N/A'}</p>
+                    <p><strong>Email:</strong> {requesterDetails?.email || detailRow.requester_email || 'N/A'}</p>
+                    <p><strong>Department:</strong> {requesterDetails?.department || detailRow.department || detailRow.requester_role || 'N/A'}</p>
+                    <p><strong>Phone:</strong> {requesterDetails?.phone_number || detailRow.requester_phone || 'N/A'}</p>
+                    <p><strong>Location:</strong> {requesterDetails?.location || detailRow.requester_location || 'N/A'}</p>
                   </div>
                   <div className="col-md-4">
                     <h6>Location Details</h6>
                     <p><strong>From Location:</strong> {detailRow.from_location || detailRow.location}</p>
-                    <p><strong>Destination Type:</strong> {detailRow.destination_type}</p>
-                    <p><strong>Destination:</strong> {detailRow.destination_type === 'internal' ? 
-                      (detailRow.to_location_internal || detailRow.destination_address) : 
-                      detailRow.destination_address}</p>
+                    <p><strong>Department:</strong> {detailRow.department || 'N/A'}</p> 
+                    <p><strong>Destination:</strong> 
+                      {detailRow.destination_type === 'internal' ? 
+                        `${detailRow.to_location_internal || detailRow.destination_address}${detailRow.to_department_internal ? ` (${detailRow.to_department_internal})` : ''}` : 
+                        detailRow.destination_address}
+                    </p>
                     {detailRow.destination_type === 'external' && (
-                      <p><strong>Receiver Name:</strong> {detailRow.receiver_name}</p>
+                      <p><strong>Receiver Name:</strong> {detailRow.receiver_name || 'N/A'}</p>
                     )}
                   </div>
                 </div>
@@ -272,7 +288,6 @@ const Approvals = () => {
                     <p><strong>Transport Mode:</strong> {detailRow.transport_mode || 'N/A'}</p>
                     <p><strong>Vehicle Number:</strong> {detailRow.vehicle_number || detailRow.vehicle_no || 'N/A'}</p>
                     <p><strong>Driver Name:</strong> {detailRow.driver_name || 'N/A'}</p>
-                    <p><strong>Driver Contact:</strong> {detailRow.driver_contact || 'N/A'}</p>
                     <p><strong>Delivery Comments:</strong> {detailRow.delivery_comment || 'N/A'}</p>
                   </div>
                 </div>

@@ -252,7 +252,7 @@ exports.getGatepassWithMaterialsById = (req, res) => {
       gpr.*,
       u1.full_name AS requester_name,
       u1.email AS requester_email,
-      u1.role AS requester_role,
+      u1.department AS requester_role,
       u1.phone_number AS requester_phone,
       u1.location AS requester_location,
       u2.full_name AS approver_name
