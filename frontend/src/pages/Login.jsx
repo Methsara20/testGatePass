@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { login } from '../services/authService';
 import { getLocations } from '../services/locationService'; // Import location service
 import { useAuth } from '../context/AuthContext';
-import { validateEmail, validateRequired } from '../utils/validators';
+import { validateRequired } from '../utils/validators';
 import PasswordResetHelp from "../components/PasswordResetHelp";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [location, setLocation] = useState('');
   const [locations, setLocations] = useState([]); // State for locations
@@ -45,12 +45,12 @@ const Login = () => {
     e.preventDefault();
     setError('');
 
-    if (!validateRequired(location) || !validateEmail(email) || !validateRequired(password)) {
+    if (!validateRequired(location) || !validateRequired(username) || !validateRequired(password)) {
       return setError('Please fill all fields correctly.');
     }
 
     try {
-      const response = await login(email, password, location);
+      const response = await login(username, password, location);
       const user = response.data;
 
       localStorage.setItem('users', JSON.stringify(user));
@@ -102,12 +102,13 @@ const Login = () => {
             )}
           </div>
           <div className="mb-3">
-            <label className="form-label">Email</label>
+            <label className="form-label">User Name / EMP No</label>
             <input
-              type="email"
+              type="text"
               className="form-control"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="employee number"
               required
             />
           </div>
@@ -118,6 +119,7 @@ const Login = () => {
               className="form-control"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
               required
             />
           </div>
