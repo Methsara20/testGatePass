@@ -5,8 +5,11 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import Sidebar from '../components/Sidebar';
 import { BiSearch } from "react-icons/bi";
 import { getUserById } from '../services/userService';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 
 const Approvals = () => {
+  const { user } = useAuth();
   const [tab, setTab] = useState('Pending');
   const [lists, setLists] = useState({ Pending: [], Approved: [], Rejected: [] });
   const [approveId, setApproveId] = useState(null);
@@ -29,16 +32,73 @@ const Approvals = () => {
     load();              
   }, []);
 
-  /* actions */
+
   const doApprove = async () => {
-    await approvePass(approveId);
-    setApproveId(null);
-    load();
+    try {
+      if (!user?.id) {
+        toast.error('You must be logged in to approve requests');
+        return;
+      }
+      
+      // Show loading toast
+      const toastId = toast.loading('Approving request...');
+      
+      await approvePass(approveId, user.id);
+      
+      // Update to success
+      toast.update(toastId, {
+        render: 'Request approved successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+      
+      setApproveId(null);
+      load();
+    } catch (error) {
+      console.error('Approval failed:', error);
+      
+      
+      toast.error(
+        error.response?.data?.message || 
+        'Failed to approve request. Please try again.',
+        {
+          autoClose: 5000,
+        }
+      );
+    }
   };
+
+
   const doReject = async () => {
-    await rejectPass(rejectId);
-    setRejectId(null);
-    load();
+    try {
+      if (!user?.id) {
+        toast.error('You must be logged in to reject requests');
+        return;
+      }
+    
+      const toastId = toast.loading('Rejecting request...');
+      await rejectPass(rejectId);
+    
+      toast.update(toastId, {
+        render: 'Request rejected successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+    
+      setRejectId(null);
+      load();
+    } catch (error) {
+      console.error('Rejection failed:', error);
+      toast.error(
+        error.response?.data?.message || 
+          'Failed to reject request. Please try again.',
+        {
+          autoClose: 5000,
+        }
+      );
+    }
   };
 
   useEffect(() => {

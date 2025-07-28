@@ -175,12 +175,38 @@ exports.getPassSummary = (req, res) => {
 
 
 // Approve gate pass
+// exports.approveGatepass = (req, res) => {
+//   const { id } = req.params;
+//   db.query('UPDATE gate_pass_requests SET status = "Approved", approved_by = ?, is_printable = true WHERE gate_pass_id = ?', [id], (err) => {
+//     if (err) return res.status(500).json({ error: err.message });
+//     res.json({ message: 'Request approved' });
+//   });
+// };
+
+// Updated approveGatepass function
 exports.approveGatepass = (req, res) => {
   const { id } = req.params;
-  db.query('UPDATE gate_pass_requests SET status = "Approved", is_printable = true WHERE gate_pass_id = ?', [id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Request approved' });
-  });
+  const { approved_by } = req.body; // Get approver ID from request body
+
+  // Validate input
+  if (!approved_by) {
+    return res.status(400).json({ error: 'Approver ID is required' });
+  }
+
+  db.query(
+    'UPDATE gate_pass_requests SET status = "Approved", approved_by = ?, is_printable = true WHERE gate_pass_id = ?',
+    [approved_by, id],
+    (err, result) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error', details: err.message });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Gate pass not found' });
+      }
+      res.json({ message: 'Request approved successfully' });
+    }
+  );
 };
 
 // Reject gate pass
