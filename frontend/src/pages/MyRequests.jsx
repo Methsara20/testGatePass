@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchMyRequests } from '../services/gatepassService';
+import { fetchMyRequests, generateGatePassPDF } from '../services/gatepassService';
 import { fetchGatePassWithMaterials } from '../services/approvalService'; 
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,8 @@ const MyRequests = () => {
   const [detailRow, setDetailRow] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPasses, setFilteredPasses] = useState([]);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  
 
   useEffect(() => {
     if (user) {
@@ -64,30 +66,172 @@ const MyRequests = () => {
     }
   };
 
-  const Row = ({ r }) => (
-    <tr>
-      <td className="fw-bold">{`REQ-${r.gate_pass_id}`}</td>
-      <td>{r.request_type}</td>
-      <td>
-        <span className={`badge ${
-          r.status === 'Approved'
-            ? 'bg-success'
-            : r.status === 'Rejected'
-              ? 'bg-danger'
-              : 'bg-warning'
-        }`}>{r.status}</span>
-      </td>
-      <td>{r.request_date}</td>
-      <td>{r.location}</td>
-      <td>
-        <i
-          className="bi bi-eye text-primary cursor-pointer"
-          onClick={() => handleViewDetails(r.gate_pass_id)}
-        />
-      </td>
-    </tr>
-  );
+  // Updated frontend function with custom filename and both view/download options
+const handlePrintGatePass = async (gatePassId) => {
+  try {
+    const gatePass = lists.Approved.find(p => p.gate_pass_id === gatePassId);
+    if (!gatePass) {
+      alert('Only approved gate passes can be printed');
+      return;
+    }
 
+    console.log('Attempting to generate PDF for gate pass:', gatePassId);
+
+    const response = await generateGatePassPDF(gatePassId);
+    
+    console.log('PDF response received:', response.status);
+
+    // Check if response contains data
+    if (!response.data || response.data.size === 0) {
+      throw new Error('Empty or invalid PDF response from server');
+    }
+
+    // Create a blob from the PDF data
+    const pdfBlob = new Blob([response.data], { 
+      type: 'application/pdf' 
+    });
+    
+    console.log('PDF blob created, size:', pdfBlob.size);
+
+    // Create a URL for the blob
+    const fileURL = URL.createObjectURL(pdfBlob);
+    
+    // Custom filename
+    const filename = `gate_pass_${gatePassId}.pdf`;
+    
+    // Option 1: Open in new tab for viewing
+    const newWindow = window.open(fileURL, '_blank');
+    if (!newWindow) {
+      // Fallback if popup blocked - download instead
+      downloadPDF(fileURL, filename);
+    } else {
+      // Also provide download option
+      setTimeout(() => {
+        if (confirm('Would you like to download the PDF as well?')) {
+          downloadPDF(fileURL, filename);
+        }
+      }, 1000);
+    }
+    
+    // Clean up the URL after a delay
+    setTimeout(() => {
+      URL.revokeObjectURL(fileURL);
+    }, 30000); // 30 seconds delay
+
+    console.log('PDF processed successfully');
+
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    
+    // More specific error messages
+    if (error.response) {
+      const status = error.response.status;
+      if (status === 403) {
+        alert('This gate pass is not approved for printing');
+      } else if (status === 404) {
+        alert('Gate pass not found');
+      } else if (status === 500) {
+        alert('Server error while generating PDF. Please try again.');
+      } else {
+        alert(`Error ${status}: ${error.response.data?.message || 'Failed to generate PDF'}`);
+      }
+    } else if (error.message.includes('Popup blocked')) {
+      alert('Please allow popups for this site to view the PDF');
+    } else {
+      alert(`Failed to generate PDF: ${error.message}`);
+    }
+  }
+};
+
+// Helper function to download PDF with custom filename
+const downloadPDF = (fileURL, filename) => {
+  const link = document.createElement('a');
+  link.href = fileURL;
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Alternative: Direct download function (if you want download only)
+const handleDownloadGatePass = async (gatePassId) => {
+  try {
+    const gatePass = lists.Approved.find(p => p.gate_pass_id === gatePassId);
+    if (!gatePass) {
+      alert('Only approved gate passes can be downloaded');
+      return;
+    }
+
+    const response = await generateGatePassPDF(gatePassId);
+    
+    if (!response.data || response.data.size === 0) {
+      throw new Error('Empty or invalid PDF response from server');
+    }
+
+    const pdfBlob = new Blob([response.data], { 
+      type: 'application/pdf' 
+    });
+    
+    const fileURL = URL.createObjectURL(pdfBlob);
+    const filename = `gate_pass_${gatePassId}.pdf`;
+    
+    // Direct download
+    downloadPDF(fileURL, filename);
+    
+    // Clean up
+    setTimeout(() => {
+      URL.revokeObjectURL(fileURL);
+    }, 1000);
+
+  } catch (error) {
+    console.error('PDF download error:', error);
+    alert(`Failed to download PDF: ${error.message}`);
+  }
+};
+
+// Updated Row component with both print (view) and download options
+const Row = ({ r }) => (
+  <tr>
+    <td className="fw-bold">{`REQ-${r.gate_pass_id}`}</td>
+    <td>{r.request_type}</td>
+    <td>
+      <span className={`badge ${
+        r.status === 'Approved'
+          ? 'bg-success'
+          : r.status === 'Rejected'
+            ? 'bg-danger'
+            : 'bg-warning'
+      }`}>{r.status}</span>
+    </td>
+    <td>{r.request_date}</td>
+    <td>{r.location}</td>
+    <td>
+      <i
+        className="bi bi-eye text-primary cursor-pointer me-2"
+        onClick={() => handleViewDetails(r.gate_pass_id)}
+        title="View Details"
+      />
+      {r.status === 'Approved' && (
+        <>
+          <i
+            className="bi bi-printer text-success cursor-pointer me-2"
+            onClick={() => handlePrintGatePass(r.gate_pass_id)}
+            title={r.print_count > 0 ? 'Print Duplicate' : 'Print Original'}
+          />
+          <i
+            className="bi bi-download text-info cursor-pointer"
+            onClick={() => handleDownloadGatePass(r.gate_pass_id)}
+            title="Download PDF"
+          />
+        </>
+      )}
+    </td>
+  </tr>
+);
+  
+
+  
   return (
     <div className="d-flex">
       <Sidebar />

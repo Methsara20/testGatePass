@@ -1,4 +1,6 @@
 const db = require('../config/db');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
 
 // Get all gate pass requests
 exports.getPasses = (req, res) => {
@@ -282,6 +284,339 @@ exports.getGatepassWithMaterialsById = (req, res) => {
 
       gatePass.materials = materialRows;
       res.json(gatePass);
+    });
+  });
+};
+
+function generatePDFContent(doc, gatePass) {
+  try {
+    const pageWidth = doc.page.width;
+    const margin = 50;
+    const contentWidth = pageWidth - (margin * 2);
+    
+    // Header - Title
+    doc.fontSize(18).font('Helvetica-Bold').text('MATERIAL GATE PASS', { align: 'center' });
+    doc.moveDown(0.5);
+    
+    // Print status (Original/Duplicate)
+    const printStatus = (gatePass.print_count && gatePass.print_count > 0) ? 'DUPLICATE' : 'ORIGINAL';
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('red').text(printStatus, { align: 'center' });
+    doc.fillColor('black');
+    doc.moveDown(0.5);
+    
+    // Gate Pass Number and Date
+    doc.fontSize(10).font('Helvetica');
+    doc.text(`Gate Pass No: GP-2025-${String(gatePass.gate_pass_id).padStart(5, '0')}`, { align: 'center' });
+    doc.text(`Date Issued: ${new Date(gatePass.created_at).toISOString().split('T')[0]}`, { align: 'center' });
+    doc.moveDown(1);
+
+    // Requester Information Section
+    drawSectionHeader(doc, 'Requester Information', margin);
+    const requesterTable = [
+      ['Name', gatePass.requester_name || 'N/A', 'Employee ID', gatePass.created_by || 'N/A'],
+      ['Department', gatePass.department || gatePass.requester_role || 'N/A', 'From Location', gatePass.location || 'N/A'],
+      ['Emergency Contact', gatePass.requester_phone || 'N/A', '', '']
+    ];
+    drawInfoTable(doc, requesterTable, margin, contentWidth);
+    doc.moveDown(1);
+
+    // Gate Pass Details Section
+    drawSectionHeader(doc, 'Gate Pass Details', margin);
+    const gatePassTable = [
+      ['Gate Pass Type', gatePass.request_type || 'N/A', 'Required Dispatch Date', gatePass.request_date || 'N/A'],
+      ['Purpose / Reason', gatePass.purpose || 'N/A', '', '']
+    ];
+    drawInfoTable(doc, gatePassTable, margin, contentWidth);
+    doc.moveDown(1);
+
+    // Material Details Section
+    drawSectionHeader(doc, 'Material Details', margin);
+    drawMaterialTable(doc, gatePass.materials || [], margin, contentWidth);
+    doc.moveDown(1);
+
+    // Destination & Transport Section
+    drawSectionHeader(doc, 'Destination & Transport', margin);
+    const destTable = [
+      ['To Location (External)', gatePass.destination_address || 'N/A', 'Transport Mode', gatePass.transport_mode || 'N/A'],
+      ['Address', gatePass.destination_address || 'N/A', '', ''],
+      ['Driver Name', gatePass.driver_name || 'N/A', 'Vehicle No.', gatePass.vehicle_no || 'N/A'],
+      ['Remarks', gatePass.remarks || 'N/A', '', '']
+    ];
+    drawInfoTable(doc, destTable, margin, contentWidth);
+    doc.moveDown(1);
+
+    // Approval Details Section
+    drawSectionHeader(doc, 'Approval Details', margin);
+    const approvalDate = gatePass.updated_at ? new Date(gatePass.updated_at).toLocaleString() : 'N/A';
+    const approvalTable = [
+      ['Approved By', gatePass.approver_name || 'N/A', 'Approval Date', approvalDate]
+    ];
+    drawInfoTable(doc, approvalTable, margin, contentWidth);
+    doc.moveDown(1);
+
+    // Security Section
+    drawSectionHeader(doc, 'For Security Use Only', margin);
+    drawSecurityTable(doc, margin, contentWidth);
+    
+   // Footer - positioned at current position but right-aligned
+   const footerText = 'This document is system generated after approval. Security section must be filled before dispatch.';
+   const currentY = doc.y;
+   const footerX = pageWidth - margin - 250; // Position from right edge
+   
+   doc.fontSize(8).font('Helvetica-Oblique')
+      .text(footerText, footerX, currentY, { 
+        align: 'right', 
+        width: 250 
+      });
+
+  } catch (error) {
+    console.error('Error generating PDF content:', error);
+    doc.text('Error generating PDF content');
+  }
+}
+
+function drawSectionHeader(doc, title, margin) {
+  doc.fontSize(12).font('Helvetica-Bold').fillColor('blue').text(title, margin, doc.y, { 
+    underline: true,
+    continued: false
+  });
+  doc.fillColor('black');
+  doc.moveDown(0.5);
+}
+
+function drawInfoTable(doc, rows, startX, tableWidth) {
+  const startY = doc.y;
+  const rowHeight = 20;
+  const colWidth = tableWidth / 4;
+  
+  rows.forEach((row, rowIndex) => {
+    const y = startY + (rowIndex * rowHeight);
+    
+    // Draw row border
+    doc.rect(startX, y, tableWidth, rowHeight).stroke();
+    
+    // Draw column separators
+    for (let i = 1; i < 4; i++) {
+      const x = startX + (i * colWidth);
+      doc.moveTo(x, y).lineTo(x, y + rowHeight).stroke();
+    }
+    
+    // Add text content
+    row.forEach((cell, colIndex) => {
+      const x = startX + (colIndex * colWidth) + 5;
+      const cellY = y + 5;
+      
+      if (colIndex % 2 === 0) {
+        // Header cells (bold)
+        doc.fontSize(9).font('Helvetica-Bold').text(cell, x, cellY, { 
+          width: colWidth - 10, 
+          height: rowHeight - 10 
+        });
+      } else {
+        // Data cells (normal)
+        doc.fontSize(9).font('Helvetica').text(cell, x, cellY, { 
+          width: colWidth - 10, 
+          height: rowHeight - 10 
+        });
+      }
+    });
+  });
+  
+  doc.y = startY + (rows.length * rowHeight);
+}
+
+function drawMaterialTable(doc, materials, startX, tableWidth) {
+  const startY = doc.y;
+  const rowHeight = 20;
+  const headers = ['Description', 'Serial No. / Item Code', 'Qty', 'UOM', 'Returnable', 'Return Date'];
+  const colWidths = [120, 80, 40, 40, 60, 70]; // Adjusted widths
+  
+  // Draw header
+  let currentX = startX;
+  headers.forEach((header, index) => {
+    doc.rect(currentX, startY, colWidths[index], rowHeight).stroke();
+    doc.fontSize(9).font('Helvetica-Bold').text(header, currentX + 3, startY + 5, {
+      width: colWidths[index] - 6,
+      height: rowHeight - 10
+    });
+    currentX += colWidths[index];
+  });
+  
+  // Draw material rows
+  if (materials && materials.length > 0) {
+    materials.forEach((material, rowIndex) => {
+      const y = startY + ((rowIndex + 1) * rowHeight);
+      currentX = startX;
+      
+      const rowData = [
+        material.description || 'N/A',
+        material.serial_number || 'N/A',
+        material.qty?.toString() || '0',
+        material.uom || 'Unit',
+        material.returnable ? 'Yes' : 'No',
+        material.returnable ? (material.return_date || 'N/A') : 'N/A'
+      ];
+      
+      rowData.forEach((cell, colIndex) => {
+        doc.rect(currentX, y, colWidths[colIndex], rowHeight).stroke();
+        doc.fontSize(8).font('Helvetica').text(cell, currentX + 3, y + 5, {
+          width: colWidths[colIndex] - 6,
+          height: rowHeight - 10
+        });
+        currentX += colWidths[colIndex];
+      });
+    });
+    doc.y = startY + ((materials.length + 1) * rowHeight);
+  } else {
+    // No materials row
+    const y = startY + rowHeight;
+    doc.rect(startX, y, tableWidth, rowHeight).stroke();
+    doc.fontSize(9).font('Helvetica').text('No materials listed', startX + 5, y + 5);
+    doc.y = y + rowHeight;
+  }
+}
+
+function drawSecurityTable(doc, startX, tableWidth) {
+  const startY = doc.y;
+  const rowHeight = 25;
+  const colWidth = tableWidth / 4;
+  
+  const securityData = [
+    ['Guard on Duty (Name, Signature & Badge ID)', 'Date / Time Out', 'Security Stamp', 'Supporting Document'],
+    ['Signature: \n\n______________', 'Date: \n\n______________', 'Security Stamp: \n\n______________', 'Serial No(s): \n\n______________'],
+    ['Name: \n\n______________', 'Time: \n\n______________', '', 'Others (please specify): \n\n______________'],
+    ['Badge ID / No: \n\n______________', 'AM/PM \nGate No: \n\n______________', '', 'Packing Slip Ref No: \n\n______________']
+  ];
+  
+  securityData.forEach((row, rowIndex) => {
+    const y = startY + (rowIndex * rowHeight);
+    
+    // Draw row border
+    doc.rect(startX, y, tableWidth, rowHeight).stroke();
+    
+    // Draw column separators
+    for (let i = 1; i < 4; i++) {
+      const x = startX + (i * colWidth);
+      doc.moveTo(x, y).lineTo(x, y + rowHeight).stroke();
+    }
+    
+    // Add text content
+    row.forEach((cell, colIndex) => {
+      const x = startX + (colIndex * colWidth) + 3;
+      const cellY = y + 3;
+      
+      const fontSize = rowIndex === 0 ? 8 : 7;
+      const font = rowIndex === 0 ? 'Helvetica-Bold' : 'Helvetica';
+      
+      doc.fontSize(fontSize).font(font).text(cell, x, cellY, { 
+        width: colWidth - 6, 
+        height: rowHeight - 6 
+      });
+    });
+  });
+  
+  doc.y = startY + (securityData.length * rowHeight);
+}
+
+// Updated main PDF generation function
+exports.generateGatePassPDF = (req, res) => {
+  const { id } = req.params;
+  
+  // First check if gate pass is approved
+  db.query('SELECT status, print_count FROM gate_pass_requests WHERE gate_pass_id = ?', [id], (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Gate Pass not found' });
+    }
+    
+    const gatePass = results[0];
+    
+    if (gatePass.status !== 'Approved') {
+      return res.status(403).json({ message: 'Only approved gate passes can be printed' });
+    }
+    
+    // Get full gate pass details with materials
+    const query = `
+      SELECT 
+        gpr.*,
+        u1.full_name AS requester_name,
+        u1.email AS requester_email,
+        u1.department AS requester_role,
+        u1.phone_number AS requester_phone,
+        u1.location AS requester_location,
+        u2.full_name AS approver_name
+      FROM gate_pass_requests gpr
+      LEFT JOIN users u1 ON gpr.created_by = u1.id
+      LEFT JOIN users u2 ON gpr.approved_by = u2.id
+      WHERE gpr.gate_pass_id = ?`;
+
+    db.query(query, [id], (err, gatePassRows) => {
+      if (err) {
+        console.error('Error fetching gate pass:', err);
+        return res.status(500).json({ message: 'Server error' });
+      }
+
+      if (gatePassRows.length === 0) {
+        return res.status(404).json({ message: 'Gate pass not found' });
+      }
+
+      const gatePassData = gatePassRows[0];
+
+      // Fetch materials
+      db.query('SELECT * FROM gate_pass_materials WHERE gate_pass_id = ?', [id], (err, materialRows) => {
+        if (err) {
+          console.error('Error fetching materials:', err);
+          return res.status(500).json({ message: 'Server error' });
+        }
+
+        gatePassData.materials = materialRows;
+        
+        try {
+          // Set response headers with custom filename
+          const filename = `gate_pass_${id}.pdf`;
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+          res.setHeader('Cache-Control', 'no-cache');
+          
+          // Create PDF document
+          const doc = new PDFDocument({ 
+            margin: 50,
+            size: 'A4'
+          });
+          
+          // Handle PDF errors
+          doc.on('error', (err) => {
+            console.error('PDF generation error:', err);
+            if (!res.headersSent) {
+              res.status(500).json({ error: 'Failed to generate PDF' });
+            }
+          });
+          
+          // Pipe PDF to response
+          doc.pipe(res);
+          
+          // Add content to PDF using the new custom format
+          generatePDFContent(doc, gatePassData);
+          
+          // Finalize PDF
+          doc.end();
+          
+          // Update print count
+          db.query('UPDATE gate_pass_requests SET print_count = COALESCE(print_count, 0) + 1 WHERE gate_pass_id = ?', [id], (err) => {
+            if (err) console.error('Failed to update print count:', err);
+          });
+          
+        } catch (err) {
+          console.error('PDF processing error:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'PDF generation failed' });
+          }
+        }
+      });
     });
   });
 };

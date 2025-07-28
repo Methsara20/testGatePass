@@ -15,7 +15,8 @@ const {
   getDeliverablePasses,
   acceptDelivery,
   rejectDelivery,
-  getGatepassWithMaterialsById
+  getGatepassWithMaterialsById,
+  generateGatePassPDF
 } = require('../controllers/passController');
 
 // Main routes
@@ -39,5 +40,8 @@ router.put('/:id/issue', rejectDelivery);
 
 // Get gate pass with materials by ID
 router.get('/:id/materials', getGatepassWithMaterialsById);
+
+// Gatepass pdf generation
+router.get('/:id/pdf', generateGatePassPDF);
 
 module.exports = router;
