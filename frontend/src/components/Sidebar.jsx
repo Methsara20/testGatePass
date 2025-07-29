@@ -20,28 +20,13 @@ const Sidebar = () => {
         transition: "width 0.3s ease"
       }}
     >
-      {/* Company Logo Section with Toggle */}
-      <div className={`d-flex align-items-center mb-4 ${isCollapsed ? 'justify-content-center' : ''}`}>
-        {/* Toggle Button - 3 lines icon positioned to the left of logo */}
-        {!isCollapsed && (
-          <button
-            className="btn p-0 me-3"
-            onClick={toggleSidebar}
-            style={{ 
-              border: "none", 
-              background: "none",
-              fontSize: "1.2rem",
-              color: "#6c757d"
-            }}
-          >
-            <i className="bi bi-list"></i>
-          </button>
-        )}
-        
+      {/* Company Logo Section */}
+      <div className={`d-flex flex-column align-items-center mb-4 ${isCollapsed ? 'justify-content-center' : ''}`}>
+        {/* Logo */}
         <img 
           src={companyLogo} 
           alt="Company Logo" 
-          className="img-fluid"
+          className="img-fluid mb-2"
           style={{ 
             height: isCollapsed ? "60px" : "100px",
             width: "auto",
@@ -54,6 +39,22 @@ const Sidebar = () => {
           onClick={isCollapsed ? toggleSidebar : undefined}
           title={isCollapsed ? "Expand sidebar" : ""}
         />
+        
+        {/* Toggle Button - positioned below logo */}
+        <button
+          className="btn p-0"
+          onClick={toggleSidebar}
+          style={{ 
+            border: "none", 
+            background: "none",
+            fontSize: "1.2rem",
+            color: "#6c757d",
+            marginTop: isCollapsed ? "0" : "10px"
+          }}
+          title={isCollapsed ? "Expand" : "Collapse"}
+        >
+          <i className={`bi ${isCollapsed ? "bi-chevron-double-right" : "bi-chevron-double-left"}`}></i>
+        </button>
       </div>
       
       <ul className="nav flex-column">
