@@ -94,7 +94,9 @@ const UsersPage = () => {
 
       <div className="p-4 flex-grow-1 w-100">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="mb-0 fw-semibold">All Users</h5>
+          <h5 className="mb-0 fw-semibold">
+            All Users <small className="text-muted">({filteredUsers.length} users)</small>
+          </h5>
           <div className="d-flex">
             <InputGroup style={{ width: "300px" }} className="me-3">
               <InputGroup.Text>
@@ -127,6 +129,7 @@ const UsersPage = () => {
           <Table hover responsive className="align-middle">
             <thead className="table-light">
               <tr>
+                <th>No</th>
                 <th>Full Name</th>
                 <th>Role</th>
                 <th>Email</th>
@@ -135,18 +138,19 @@ const UsersPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.full_name}</td>
-                  <td>{u.role}</td>
-                  <td>{u.email}</td>
-                  <td>{u.location}</td>
+              {filteredUsers.map((user, index) => (
+                <tr key={user.id}>
+                  <td>{index + 1}</td>
+                  <td>{user.full_name}</td>
+                  <td>{user.role}</td>
+                  <td>{user.email}</td>
+                  <td>{user.location}</td>
                   <td>
                     <Button
                       size="sm"
                       variant="light"
                       onClick={() => {
-                        setSelectedUser(u);
+                        setSelectedUser(user);
                         setMode("view");
                       }}
                     >
@@ -156,7 +160,7 @@ const UsersPage = () => {
                       size="sm"
                       variant="outline-primary"
                       onClick={() => {
-                        setSelectedUser(u);
+                        setSelectedUser(user);
                         setMode("edit");
                       }}
                     >
@@ -165,7 +169,7 @@ const UsersPage = () => {
                     <Button
                       size="sm"
                       variant="outline-danger"
-                      onClick={() => handleDelete(u.id)}
+                      onClick={() => handleDelete(user.id)}
                     >
                       <Trash />
                     </Button>
@@ -174,7 +178,7 @@ const UsersPage = () => {
               ))}
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="text-center py-4">
+                  <td colSpan="6" className="text-center py-4">
                     {searchTerm ? "No matching users found" : "No users found"}
                   </td>
                 </tr>
@@ -195,7 +199,7 @@ const UsersPage = () => {
           </Modal.Header>
           <Modal.Body>
             <UserForm
-              key="new" /* keeps form empty each time */
+              key="new"
               submitLabel="Create User"
               onSubmit={handleCreate}
             />
@@ -216,7 +220,6 @@ const UsersPage = () => {
           </Modal.Header>
 
           <Modal.Body>
-            {/* View mode */}
             {selectedUser && mode === "view" && (
               <div className="vstack gap-2">
                 <div>
@@ -240,10 +243,9 @@ const UsersPage = () => {
               </div>
             )}
 
-            {/* Edit mode */}
             {selectedUser && mode === "edit" && (
               <UserForm
-                key={selectedUser.id} /* forces fresh mount per user */
+                key={selectedUser.id}
                 initialValues={selectedUser}
                 submitLabel="Update User"
                 onSubmit={handleUpdate}
