@@ -62,7 +62,7 @@ const GatePassForm = () => {
       try {
         // Fetch locations and departments in parallel
         const [locationsResponse, departmentsResponse] = await Promise.all([
-          axios.get("http://localhost:5000/api/locations"),
+          axios.get("http://192.168.10.144:5000/api/locations"),
           getDepartments()
         ]);
 
@@ -203,7 +203,7 @@ const GatePassForm = () => {
         formDataToSend.append('document', formData.document);
       }
   
-      const response = await axios.post("http://localhost:5000/api/passes", formDataToSend, {
+      const response = await axios.post("http://192.168.10.144:5000/api/passes", formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
