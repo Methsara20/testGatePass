@@ -25,14 +25,14 @@ exports.addUser = (req, res) => {
 exports.updateUser = (req, res) => {
     
     const { id } = req.params;
-    const { username, full_name, role, email, phone_number, location, department  } = req.body;
+    const { username, password, full_name, role, email, phone_number, location, department  } = req.body;
 
     const query = `
         UPDATE users
-        SET username = ?, full_name = ?, role = ?, email = ?, phone_number = ?, location = ?, department = ?
+        SET username = ?, password = ?, full_name = ?, role = ?, email = ?, phone_number = ?, location = ?, department = ?
         WHERE id = ?
     `;
-    db.query(query, [username, full_name, role, email, phone_number, location, department , id], (err, result) => {
+    db.query(query, [username, password, full_name, role, email, phone_number, location, department , id], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'User not found' });
