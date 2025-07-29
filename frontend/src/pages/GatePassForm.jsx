@@ -280,28 +280,30 @@ const GatePassForm = () => {
   return (
     <div className="d-flex">
       <Sidebar />
-      <div className="p-4 flex-grow-1 w-100">
-        <h3 className="mb-3">Material Gate Pass Request Form</h3>
+      <div className="p-3 flex-grow-1 w-100 me-4" style={{ fontSize: '0.9rem' }}>
+        <h4 className="mb-3">Material Gate Pass Request Form</h4>
 
         {submitted && (
-          <Alert variant="success">
+          <Alert variant="success" className="py-2">
             {isDraft ? "Draft saved successfully!" : "Gate pass submitted successfully!"}
             {gatePassId && ` Gate Pass ID: ${gatePassId}`}
           </Alert>
         )}
-        {error && <Alert variant="danger">{error}</Alert>}
+        {error && <Alert variant="danger" className="py-2">{error}</Alert>}
 
         <Form onSubmit={(e) => handleSubmit(e, false)}>
-          <div className="mb-3 fw-bold">
+          <div className="mb-2 fw-bold small">
             Gate Pass No: <span className="text-primary">{gatePassId || "Auto-generated"}</span>
           </div>
 
-          <Row className="mb-3">
-            <Col>
+          {/* Basic Info - 3 Boxes in a Row */}
+          <Row className="mb-2">
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Request Type</Form.Label>
+                <Form.Label className="small mb-1">Request Type</Form.Label>
                 <Form.Control
                   as="select"
+                  size="sm"
                   value={formData.request_type}
                   onChange={(e) => handleChange('request_type', e.target.value)}
                   required
@@ -312,23 +314,24 @@ const GatePassForm = () => {
                 </Form.Control>
               </Form.Group>
             </Col>
-
-            <Col>
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Date</Form.Label>
+                <Form.Label className="small mb-1">Date</Form.Label>
                 <Form.Control
                   type="date"
+                  size="sm"
                   value={formData.request_date}
                   onChange={(e) => handleChange('request_date', e.target.value)}
                   required
                 />
               </Form.Group>
             </Col>
-            <Col>
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Time</Form.Label>
+                <Form.Label className="small mb-1">Time</Form.Label>
                 <Form.Control
                   type="time"
+                  size="sm"
                   value={formData.request_time}
                   onChange={(e) => handleChange('request_time', e.target.value)}
                   required
@@ -337,12 +340,29 @@ const GatePassForm = () => {
             </Col>
           </Row>
 
-          <Form.Group className="mb-3">
+          {/* From Location - Single Field */}
+          <Row className="mb-2">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">From Location</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  size="sm"
+                  value={formData.from_location} 
+                  disabled 
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Purpose and Notes - 2 Boxes */}
+          <Row className="mb-2">
             <Col md={6}>
               <Form.Group>
-                <Form.Label>Purpose</Form.Label>
+                <Form.Label className="small mb-1">Purpose *</Form.Label>
                 <Form.Control
                   as="textarea"
+                  size="sm"
                   rows={2}
                   value={formData.purpose}
                   onChange={(e) => handleChange('purpose', e.target.value)}
@@ -350,14 +370,12 @@ const GatePassForm = () => {
                 />
               </Form.Group>
             </Col>
-          </Form.Group>
-
-          <Row className="mb-3">
             <Col md={6}>
               <Form.Group>
-                <Form.Label>Additional Notes</Form.Label>
+                <Form.Label className="small mb-1">Additional Notes</Form.Label>
                 <Form.Control
                   as="textarea"
+                  size="sm"
                   rows={2}
                   value={formData.additional_notes}
                   onChange={(e) => handleChange('additional_notes', e.target.value)}
@@ -366,55 +384,62 @@ const GatePassForm = () => {
             </Col>
           </Row>
 
-          <Row className="mb-3">
-            <Col>
+          {/* Employee Details - 3 Boxes in Row 1 */}
+          <Row className="mb-2">
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Employee ID</Form.Label>
+                <Form.Label className="small mb-1">Employee ID</Form.Label>
                 <Form.Control 
                   type="text" 
+                  size="sm"
                   value={formData.employee_id} 
                   disabled 
                 />
               </Form.Group>
             </Col>
-            <Col>
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Name</Form.Label>
+                <Form.Label className="small mb-1">Name</Form.Label>
                 <Form.Control 
                   type="text" 
+                  size="sm"
                   value={formData.full_name} 
+                  disabled 
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Department</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  size="sm"
+                  value={formData.department} 
                   disabled 
                 />
               </Form.Group>
             </Col>
           </Row>
 
-          <Row className="mb-3">
-            <Col>
+          {/* Email and Phone - 2 Boxes */}
+          <Row className="mb-2">
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Department</Form.Label>
+                <Form.Label className="small mb-1">Email</Form.Label>
                 <Form.Control 
                   type="text" 
-                  value={formData.department} 
-                  disabled 
-                />
-              </Form.Group>
-            </Col>
-            <Col>
-              <Form.Group>
-                <Form.Label>Email</Form.Label>
-                <Form.Control 
-                  type="text" 
+                  size="sm"
                   value={formData.email} 
                   disabled 
                 />
               </Form.Group>
             </Col>
-            <Col>
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Phone</Form.Label>
+                <Form.Label className="small mb-1">Phone</Form.Label>
                 <Form.Control 
                   type="text" 
+                  size="sm"
                   value={formData.phone} 
                   disabled 
                 />
@@ -422,66 +447,56 @@ const GatePassForm = () => {
             </Col>
           </Row>
 
-          <Row className="mb-3">
-            <Col>
-              <Form.Group>
-                <Form.Label>From Location</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  value={formData.from_location} 
-                  disabled 
+          {/* Destination Type - Radio Buttons */}
+          <Form.Group className="mb-2">
+            <Form.Label className="small mb-1">Destination Type</Form.Label>
+            <div className="d-flex gap-3">
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="destination_type"
+                  id="internal"
+                  value="internal"
+                  checked={formData.destination_type === "internal"}
+                  onChange={() => handleChange('destination_type', 'internal')}
                 />
-              </Form.Group>
-            </Col>
-          </Row>
-
-          <h5 className="mt-4 mb-3">Destination & Transport Details</h5>
-          
-          <Form.Group className="mb-3">
-            <Form.Label>Is Destination Internal?</Form.Label>
-            <div className="form-check">
-              <input
-                className="form-check-input"
-                type="radio"
-                name="destination_type"
-                id="internal"
-                value="internal"
-                checked={formData.destination_type === "internal"}
-                onChange={() => handleChange('destination_type', 'internal')}
-              />
-              <label className="form-check-label" htmlFor="internal">
-                Yes (Internal)
-              </label>
-            </div>
-            <div className="form-check">
-              <input
-                className="form-check-input"
-                type="radio"
-                name="destination_type"
-                id="external"
-                value="external"
-                checked={formData.destination_type === "external"}
-                onChange={() => handleChange('destination_type', 'external')}
-              />
-              <label className="form-check-label" htmlFor="external">
-                No (External)
-              </label>
+                <label className="form-check-label small" htmlFor="internal">
+                  Internal
+                </label>
+              </div>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="destination_type"
+                  id="external"
+                  value="external"
+                  checked={formData.destination_type === "external"}
+                  onChange={() => handleChange('destination_type', 'external')}
+                />
+                <label className="form-check-label small" htmlFor="external">
+                  External
+                </label>
+              </div>
             </div>
           </Form.Group>
 
+          {/* Destination Details - Conditional Layout */}
           {formData.destination_type === "internal" ? (
-            <Row className="mb-3">
+            <Row className="mb-2">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>To Location (Internal)</Form.Label>
+                  <Form.Label className="small mb-1">To Location (Internal)</Form.Label>
                   {loadingLocations ? (
                     <div className="d-flex align-items-center">
                       <Spinner animation="border" size="sm" className="me-2" />
-                      <span>Loading locations...</span>
+                      <span className="small">Loading...</span>
                     </div>
                   ) : (
                     <Form.Control
                       as="select"
+                      size="sm"
                       value={formData.to_location_internal}
                       onChange={(e) => handleChange('to_location_internal', e.target.value)}
                       required
@@ -498,15 +513,16 @@ const GatePassForm = () => {
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>To Department (Internal)</Form.Label>
+                  <Form.Label className="small mb-1">To Department (Internal)</Form.Label>
                   {loadingDepartments ? (
                     <div className="d-flex align-items-center">
                       <Spinner animation="border" size="sm" className="me-2" />
-                      <span>Loading departments...</span>
+                      <span className="small">Loading...</span>
                     </div>
                   ) : (
                     <Form.Control
                       as="select"
+                      size="sm"
                       value={formData.to_department_internal}
                       onChange={(e) => handleChange('to_department_internal', e.target.value)}
                       required
@@ -523,34 +539,42 @@ const GatePassForm = () => {
               </Col>
             </Row>
           ) : (
-            <>
-              <Form.Group className="mb-3">
-                <Form.Label>Destination Address (External)</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={formData.destination_address}
-                  onChange={(e) => handleChange('destination_address', e.target.value)}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Receiver Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={formData.receiver_name}
-                  onChange={(e) => handleChange('receiver_name', e.target.value)}
-                  required
-                />
-              </Form.Group>
-            </>
+            <Row className="mb-2">
+              <Col md={8}>
+                <Form.Group>
+                  <Form.Label className="small mb-1">Destination Address (External)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    value={formData.destination_address}
+                    onChange={(e) => handleChange('destination_address', e.target.value)}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group>
+                  <Form.Label className="small mb-1">Receiver Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    value={formData.receiver_name}
+                    onChange={(e) => handleChange('receiver_name', e.target.value)}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
           )}
 
-          <Row className="mb-3">
-            <Col>
+          {/* Transport Details - 3 Boxes Row 1 */}
+          <Row className="mb-2">
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Transport Mode</Form.Label>
+                <Form.Label className="small mb-1">Transport Mode</Form.Label>
                 <Form.Control
                   as="select"
+                  size="sm"
                   value={formData.transport_mode}
                   onChange={(e) => handleChange('transport_mode', e.target.value)}
                 >
@@ -562,34 +586,38 @@ const GatePassForm = () => {
                 </Form.Control>
               </Form.Group>
             </Col>
-            <Col>
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Vehicle Number</Form.Label>
+                <Form.Label className="small mb-1">Vehicle Number</Form.Label>
                 <Form.Control
                   type="text"
+                  size="sm"
                   value={formData.vehicle_number}
                   onChange={(e) => handleChange('vehicle_number', e.target.value)}
                 />
               </Form.Group>
             </Col>
-          </Row>
-
-          <Row className="mb-3">
-            <Col>
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Driver Name</Form.Label>
+                <Form.Label className="small mb-1">Driver Name</Form.Label>
                 <Form.Control
                   type="text"
+                  size="sm"
                   value={formData.driver_name}
                   onChange={(e) => handleChange('driver_name', e.target.value)}
                 />
               </Form.Group>
             </Col>
-            <Col>
+          </Row>
+
+          {/* Driver Contact - Single Box */}
+          <Row className="mb-2">
+            <Col md={4}>
               <Form.Group>
-                <Form.Label>Driver Contact</Form.Label>
+                <Form.Label className="small mb-1">Driver Contact</Form.Label>
                 <Form.Control
                   type="text"
+                  size="sm"
                   value={formData.driver_contact}
                   onChange={(e) => handleChange('driver_contact', e.target.value)}
                 />
@@ -597,32 +625,41 @@ const GatePassForm = () => {
             </Col>
           </Row>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Delivery Comments</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={2}
-              value={formData.delivery_comment}
-              onChange={(e) => handleChange('delivery_comment', e.target.value)}
-            />
-          </Form.Group>
+          {/* Comments and Remarks - 2 Boxes */}
+          <Row className="mb-2">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Delivery Comments</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  size="sm"
+                  rows={2}
+                  value={formData.delivery_comment}
+                  onChange={(e) => handleChange('delivery_comment', e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Remarks</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  size="sm"
+                  rows={2}
+                  value={formData.remarks}
+                  onChange={(e) => handleChange('remarks', e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Remarks</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={formData.remarks}
-              onChange={(e) => handleChange('remarks', e.target.value)}
-            />
-          </Form.Group>
-
-          <h5 className="mt-4">Material Details</h5>
-          <Table bordered responsive className="mt-3">
+          {/* Material Details - Compact Table */}
+          <h6 className="mt-3 mb-2">Material Details</h6>
+          <Table bordered responsive size="sm" className="mb-2">
             <thead className="table-light">
-              <tr>
+              <tr style={{ fontSize: '0.8rem' }}>
                 <th>Item Description*</th>
-                <th>Serial Number/Item Code*</th>
+                <th>Serial Number*</th>
                 <th>Qty*</th>
                 <th>UOM*</th>
                 <th>Returnable</th>
@@ -636,6 +673,7 @@ const GatePassForm = () => {
                   <td>
                     <Form.Control
                       type="text"
+                      size="sm"
                       value={item.description}
                       onChange={e => handleMaterialChange(item.id, 'description', e.target.value)}
                       required
@@ -644,29 +682,32 @@ const GatePassForm = () => {
                   <td>
                     <Form.Control
                       type="text"
+                      size="sm"
                       value={item.serial_number}
                       onChange={e => handleMaterialChange(item.id, 'serial_number', e.target.value)}
                       placeholder="SN-0001"
                       required
                     />
                   </td>
-                  <td>
+                  <td style={{ width: '80px' }}>
                     <Form.Control
                       type="number"
+                      size="sm"
                       min="1"
                       value={item.qty}
                       onChange={e => handleMaterialChange(item.id, 'qty', parseInt(e.target.value) || 0)}
                       required
                     />
                   </td>
-                  <td>
+                  <td style={{ width: '100px' }}>
                     <Form.Control
                       as="select"
+                      size="sm"
                       value={item.uom}
                       onChange={e => handleMaterialChange(item.id, 'uom', e.target.value)}
                       required
                     >
-                      <option value="">Select UOM</option>
+                      <option value="">Select</option>
                       <option value="Unit">Unit</option>
                       <option value="PC">Piece</option>
                       <option value="KG">Kilogram</option>
@@ -675,33 +716,34 @@ const GatePassForm = () => {
                       <option value="SET">Set</option>
                     </Form.Control>
                   </td>
-                  <td className="text-center align-middle">
+                  <td className="text-center" style={{ width: '80px' }}>
                     <Form.Check
                       type="checkbox"
+                      size="sm"
                       checked={item.returnable}
                       disabled={formData.request_type === "Non-returnable"}
                       onChange={e => toggleReturnable(item.id, e.target.checked)}
-                      className="mt-2"
                     />
                   </td>
-                  <td>
+                  <td style={{ width: '130px' }}>
                     <Form.Control
                       type="date"
+                      size="sm"
                       value={item.return_date}
                       onChange={e => handleMaterialChange(item.id, 'return_date', e.target.value)}
                       disabled={!item.returnable || formData.request_type === "Non-returnable"}
                       min={formData.request_date}
                     />
                   </td>
-                  <td className="text-center align-middle">
+                  <td className="text-center" style={{ width: '60px' }}>
                     <Button
                       variant="outline-danger"
+                      size="sm"
                       onClick={() => removeMaterialRow(item.id)}
                       title="Remove row"
-                      size="sm"
                       disabled={materials.length <= 1}
                     >
-                      <i className="bi bi-trash"></i>
+                      <i className="bi bi-trash" style={{ fontSize: '0.8rem' }}></i>
                     </Button>
                   </td>
                 </tr>
@@ -711,23 +753,28 @@ const GatePassForm = () => {
 
           <Button 
             variant="outline-primary" 
+            size="sm"
             onClick={addMaterialRow} 
             className="mb-3"
           >
-            <i className="bi bi-plus-circle"></i> Add Material
+            <i className="bi bi-plus-circle me-1"></i> Add Material
           </Button>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Supporting Document (optional)</Form.Label>
-            <Form.Control
-              type="file"
-              onChange={(e) => handleChange('document', e.target.files[0])}
-            />
-          </Form.Group>
+          {/* <Row className="mb-3">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Supporting Document (optional)</Form.Label>
+                <Form.Control
+                  type="file"
+                  size="sm"
+                  onChange={(e) => handleChange('document', e.target.files[0])}
+                />
+              </Form.Group>
+            </Col>
+          </Row> */}
 
-          <div className="d-flex justify-content-between mt-4">
-            
-            <Button type="submit" variant="primary">
+          <div className="d-flex justify-content-end mt-3">
+            <Button type="submit" variant="primary" size="sm">
               Submit Gate Pass
             </Button>
           </div>
