@@ -6,11 +6,13 @@ import {
   rejectDelivery,
 } from "../services/deliveryService";
 import { fetchGatePassWithMaterials } from "../services/approvalService";
+import { useAuth } from "../context/AuthContext";
 import { Modal, Button, Form, InputGroup, Table } from "react-bootstrap";
 import { BiSearch, BiDetail } from "react-icons/bi";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 const GatepassDelivery = () => {
+  const { user } = useAuth();
   const [passes, setPasses] = useState([]);
   const [filteredPasses, setFilteredPasses] = useState([]);
   const [rejectId, setRejectId] = useState(null);
@@ -19,18 +21,33 @@ const GatepassDelivery = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [detailRow, setDetailRow] = useState(null);
 
+
+  // useEffect(() => {
+  //   let isMounted = true;
+  //   if (user?.location) { 
+  //     fetchDeliveries(user.location).then((res) => {
+  //       if (isMounted) {
+  //         setPasses(res.data);
+  //         setFilteredPasses(res.data);
+  //       }
+  //     });
+  //   }
+  //   return () => { isMounted = false; };
+  // }, [user?.location]);
+
   useEffect(() => {
     let isMounted = true;
-    fetchDeliveries().then((res) => {
-      if (isMounted) {
-        setPasses(res.data);
-        setFilteredPasses(res.data);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    if (user?.location && user?.department) {
+      fetchDeliveries(user.location, user.department).then((res) => {
+        if (isMounted) {
+          setPasses(res.data);
+          setFilteredPasses(res.data);
+        }
+      }).catch(err => console.error("Fetch Deliveries Error:", err));
+    }
+    return () => { isMounted = false; };
+  }, [user?.location, user?.department]);
+  
 
   useEffect(() => {
     if (searchTerm === "") {
@@ -132,7 +149,7 @@ const GatepassDelivery = () => {
               <tr>
                 <th>ID</th>
                 <th>Date</th>
-                <th>Location</th>
+                <th>From Location</th>
                 <th>Actions</th>
               </tr>
             </thead>

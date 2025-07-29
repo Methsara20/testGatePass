@@ -234,15 +234,40 @@ exports.getMyRequests = (req, res) => {
 
 
 // Get all approved but not delivered gate passes
+// exports.getDeliverablePasses = (req, res) => {
+//   db.query(
+//     'SELECT * FROM gate_pass_requests WHERE status = "Approved" AND delivery_status = "Waiting" ORDER BY gate_pass_id DESC',
+//     (err, rows) => {
+//       if (err) return res.status(500).json({ error: err.message });
+//       res.json(rows);
+//     }
+//   );
+// };
+
+// Get deliverable passes filtered by user's location
 exports.getDeliverablePasses = (req, res) => {
-  db.query(
-    'SELECT * FROM gate_pass_requests WHERE status = "Approved" AND delivery_status = "Waiting" ORDER BY gate_pass_id DESC',
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
-    }
-  );
+  const { location,  department } = req.query; // Pass location from frontend
+
+  if (!location || !department) {
+    return res.status(400).json({ error: "User location is required" });
+  }
+
+  const sql = `
+    SELECT * 
+    FROM gate_pass_requests 
+    WHERE status = "Approved" 
+      AND delivery_status = "Waiting" 
+      AND destination_address = ? 
+      AND department = ?
+    ORDER BY gate_pass_id DESC
+  `;
+
+  db.query(sql, [location, department], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
 };
+
 
 // Accept delivery
 exports.acceptDelivery = (req, res) => {
