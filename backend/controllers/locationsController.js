@@ -2,12 +2,11 @@ const db = require('../config/db'); // adjust based on your structure
 
 // Get all locations
 exports.getAllLocations = (req, res) => {
-  db.query('SELECT * FROM locations ORDER BY location_id DESC', (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
-};
-
+    db.query('SELECT * FROM locations ORDER BY location_id ASC', (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
+  };
 // Add a new location
 exports.addLocation = (req, res) => {
   const { location_name } = req.body;

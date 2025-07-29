@@ -19,13 +19,39 @@ const Login = () => {
   const { setUser } = useAuth();
 
   // Fetch locations on component mount
+  // useEffect(() => {
+  //   const fetchLocations = async () => {
+  //     setLoadingLocations(true);
+  //     try {
+  //       const locationsData = await getLocations();
+  //       if (Array.isArray(locationsData)) {
+  //         setLocations(locationsData);
+  //       } else {
+  //         console.error('Unexpected locations format:', locationsData);
+  //         setLocations([]);
+  //       }
+  //     } catch (err) {
+  //       console.error('Failed to load locations:', err);
+  //       setLocations([]);
+  //     } finally {
+  //       setLoadingLocations(false);
+  //     }
+  //   };
+
+  //   fetchLocations();
+  // }, []);
+
   useEffect(() => {
     const fetchLocations = async () => {
       setLoadingLocations(true);
       try {
         const locationsData = await getLocations();
         if (Array.isArray(locationsData)) {
-          setLocations(locationsData);
+          // Sort locations by location_id in ascending order
+          const sortedLocations = [...locationsData].sort((a, b) => 
+            a.location_id - b.location_id
+          );
+          setLocations(sortedLocations);
         } else {
           console.error('Unexpected locations format:', locationsData);
           setLocations([]);
@@ -37,7 +63,7 @@ const Login = () => {
         setLoadingLocations(false);
       }
     };
-
+  
     fetchLocations();
   }, []);
 
