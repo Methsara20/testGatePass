@@ -726,15 +726,7 @@ const GatePassForm = () => {
           </Form.Group>
 
           <div className="d-flex justify-content-between mt-4">
-            <Button 
-              variant="secondary" 
-              onClick={(e) => {
-                setIsDraft(true);
-                handleSubmit(e, true);
-              }}
-            >
-              Save as Draft
-            </Button>
+            
             <Button type="submit" variant="primary">
               Submit Gate Pass
             </Button>

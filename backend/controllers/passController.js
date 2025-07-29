@@ -56,7 +56,7 @@ exports.addGatepass = (req, res) => {
     const values = [
       request_type, request_date, request_time, location, purpose,
       additional_notes, status, is_draft, is_printable, delivery_status,
-      delivery_comment, receiver_name, destination_address,department, transport_mode,
+      delivery_comment, receiver_name, destination_address, department, transport_mode,
       vehicle_no, driver_name, remarks, created_by, approved_by
     ];
 
@@ -161,9 +161,38 @@ exports.deleteGatepass = (req, res) => {
 };
 
 // Return three separate lists: Pending, Approved, Rejected
+// exports.getPassSummary = (req, res) => {
+//   db.query('SELECT * FROM gate_pass_requests ORDER BY gate_pass_id DESC', (err, rows) => {
+//     if (err) return res.status(500).json({ error: err.message });
+//     res.json({
+//       Pending: rows.filter(r => r.status === 'Pending'),
+//       Approved: rows.filter(r => r.status === 'Approved'),
+//       Rejected: rows.filter(r => r.status === 'Rejected'),
+//     });
+//   });
+// };
+
+
+// Return three separate lists: Pending, Approved, Rejected 
 exports.getPassSummary = (req, res) => {
-  db.query('SELECT * FROM gate_pass_requests ORDER BY gate_pass_id DESC', (err, rows) => {
+  const { location, department } = req.query;
+  
+  if (!location || !department) {
+    return res.status(400).json({ error: "Location and Department are required" });
+  }
+  
+  const sql = `
+    SELECT gpr.*
+    FROM gate_pass_requests gpr
+    JOIN users u ON gpr.created_by = u.id
+    WHERE u.location = ? 
+      AND u.department = ?
+    ORDER BY gpr.gate_pass_id DESC
+  `;
+  
+  db.query(sql, [location, department], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
+    
     res.json({
       Pending: rows.filter(r => r.status === 'Pending'),
       Approved: rows.filter(r => r.status === 'Approved'),

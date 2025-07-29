@@ -13,25 +13,48 @@ const Approvals = () => {
   const [tab, setTab] = useState('Pending');
   const [lists, setLists] = useState({ Pending: [], Approved: [], Rejected: [] });
   const [approveId, setApproveId] = useState(null);
-  const [rejectId, setRejectId] = useState(null);
+  const [rejectId, setRejectId] = useState(null); 
   const [detailRow, setDetailRow] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPasses, setFilteredPasses] = useState([]);
   const [requesterDetails, setRequesterDetails] = useState(null);
 
   /* fetch helper */
-  const load = () =>
-    fetchSummary()
+  // const load = () =>
+  //   fetchSummary()
+  //     .then((r) => {
+  //       setLists(r.data);
+  //       setFilteredPasses(r.data[tab] || []);
+  //     })
+  //     .catch((e) => console.error('Load error', e));
+
+  // useEffect(() => {      
+  //   load();              
+  // }, []);
+
+
+
+  const load = () => {
+    if (!user?.location || !user?.department) {
+      console.log('User location or department not available:', { location: user?.location, department: user?.department });
+      return;
+    }
+  
+    console.log('Fetching for:', { location: user.location, department: user.department }); // Add this line
+    
+    fetchSummary(user.location, user.department) 
       .then((r) => {
+        console.log('Fetched data:', r.data);
         setLists(r.data);
         setFilteredPasses(r.data[tab] || []);
       })
       .catch((e) => console.error('Load error', e));
-
+  };
+  
   useEffect(() => {      
     load();              
-  }, []);
-
+  }, [user?.location, user?.department, tab]);
+  
 
   const doApprove = async () => {
     try {
@@ -187,7 +210,9 @@ const Approvals = () => {
       <Sidebar />
       <div className="p-4 flex-grow-1 w-100">
         <h4 className="mb-1">Approvals</h4>
-        <p className="text-muted">Review and manage pending gate-pass approvals.</p>
+        <p className="text-muted">
+          Review and manage pending gate-pass approvals.
+        </p>
 
         {/* Improved Search Input */}
         <div className="mb-3">
@@ -214,14 +239,11 @@ const Approvals = () => {
 
         {/* Tabs */}
         <ul className="nav nav-tabs mb-3">
-          {['Pending', 'Approved', 'Rejected'].map((t) => (
+          {["Pending", "Approved", "Rejected"].map((t) => (
             <li className="nav-item" key={t}>
               <button
-                className={`nav-link ${tab === t ? 'active' : ''}`}
-                onClick={() => {
-                  setTab(t);
-                  setFilteredPasses(lists[t] || []);
-                }}
+                className={`nav-link ${tab === t ? "active" : ""}`}
+                onClick={() => setTab(t)}
               >
                 {t}
                 <span className="badge bg-light text-dark ms-1">
@@ -293,9 +315,16 @@ const Approvals = () => {
         </Modal>
 
         {/* Enhanced Details modal */}
-        <Modal show={!!detailRow} onHide={() => setDetailRow(null)} centered size="xl">
+        <Modal
+          show={!!detailRow}
+          onHide={() => setDetailRow(null)}
+          centered
+          size="xl"
+        >
           <Modal.Header closeButton>
-            <Modal.Title>Gate Pass Request Details - REQ-{detailRow?.gate_pass_id}</Modal.Title>
+            <Modal.Title>
+              Gate Pass Request Details - REQ-{detailRow?.gate_pass_id}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {detailRow && (
@@ -303,30 +332,81 @@ const Approvals = () => {
                 <div className="row mb-4">
                   <div className="col-md-4">
                     <h6>Basic Information</h6>
-                    <p><strong>Request Type:</strong> {detailRow.request_type}</p>
-                    <p><strong>Status:</strong> {detailRow.status}</p>
-                    <p><strong>Date:</strong> {detailRow.request_date}</p>
-                    <p><strong>Time:</strong> {detailRow.request_time}</p>
+                    <p>
+                      <strong>Request Type:</strong> {detailRow.request_type}
+                    </p>
+                    <p>
+                      <strong>Status:</strong> {detailRow.status}
+                    </p>
+                    <p>
+                      <strong>Date:</strong> {detailRow.request_date}
+                    </p>
+                    <p>
+                      <strong>Time:</strong> {detailRow.request_time}
+                    </p>
                   </div>
                   <div className="col-md-4">
                     <h6>Requester Details</h6>
-                    <p><strong>Name:</strong> {requesterDetails?.full_name || detailRow.requester_name || 'N/A'}</p>
-                    <p><strong>Email:</strong> {requesterDetails?.email || detailRow.requester_email || 'N/A'}</p>
-                    <p><strong>Department:</strong> {requesterDetails?.department || detailRow.department || detailRow.requester_role || 'N/A'}</p>
-                    <p><strong>Phone:</strong> {requesterDetails?.phone_number || detailRow.requester_phone || 'N/A'}</p>
-                    <p><strong>Location:</strong> {requesterDetails?.location || detailRow.requester_location || 'N/A'}</p>
+                    <p>
+                      <strong>Name:</strong>{" "}
+                      {requesterDetails?.full_name ||
+                        detailRow.requester_name ||
+                        "N/A"}
+                    </p>
+                    <p>
+                      <strong>Email:</strong>{" "}
+                      {requesterDetails?.email ||
+                        detailRow.requester_email ||
+                        "N/A"}
+                    </p>
+                    <p>
+                      <strong>Department:</strong>{" "}
+                      {requesterDetails?.department ||
+                        detailRow.department ||
+                        detailRow.requester_role ||
+                        "N/A"}
+                    </p>
+                    <p>
+                      <strong>Phone:</strong>{" "}
+                      {requesterDetails?.phone_number ||
+                        detailRow.requester_phone ||
+                        "N/A"}
+                    </p>
+                    <p>
+                      <strong>Location:</strong>{" "}
+                      {requesterDetails?.location ||
+                        detailRow.requester_location ||
+                        "N/A"}
+                    </p>
                   </div>
                   <div className="col-md-4">
                     <h6>Location Details</h6>
-                    <p><strong>From Location:</strong> {detailRow.from_location || detailRow.location}</p>
-                    <p><strong>Department:</strong> {detailRow.department || 'N/A'}</p> 
-                    <p><strong>Destination:</strong> 
-                      {detailRow.destination_type === 'internal' ? 
-                        `${detailRow.to_location_internal || detailRow.destination_address}${detailRow.to_department_internal ? ` (${detailRow.to_department_internal})` : ''}` : 
-                        detailRow.destination_address}
+                    <p>
+                      <strong>From Location:</strong>{" "}
+                      {detailRow.from_location || detailRow.location}
                     </p>
-                    {detailRow.destination_type === 'external' && (
-                      <p><strong>Receiver Name:</strong> {detailRow.receiver_name || 'N/A'}</p>
+                    <p>
+                      <strong>Department:</strong>{" "}
+                      {detailRow.department || "N/A"}
+                    </p>
+                    <p>
+                      <strong>Destination:</strong>
+                      {detailRow.destination_type === "internal"
+                        ? `${
+                            detailRow.to_location_internal ||
+                            detailRow.destination_address
+                          }${
+                            detailRow.to_department_internal
+                              ? ` (${detailRow.to_department_internal})`
+                              : ""
+                          }`
+                        : detailRow.destination_address}
+                    </p>
+                    {detailRow.destination_type === "external" && (
+                      <p>
+                        <strong>Receiver Name:</strong>{" "}
+                        {detailRow.receiver_name || "N/A"}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -334,21 +414,39 @@ const Approvals = () => {
                 <div className="row mb-4">
                   <div className="col-md-6">
                     <h6>Purpose & Notes</h6>
-                    <p><strong>Purpose:</strong></p>
+                    <p>
+                      <strong>Purpose:</strong>
+                    </p>
                     <p className="mb-3">{detailRow.purpose}</p>
                     {detailRow.additional_notes && (
                       <>
-                        <p><strong>Additional Notes:</strong></p>
+                        <p>
+                          <strong>Additional Notes:</strong>
+                        </p>
                         <p>{detailRow.additional_notes}</p>
                       </>
                     )}
                   </div>
                   <div className="col-md-6">
                     <h6>Transport Details</h6>
-                    <p><strong>Transport Mode:</strong> {detailRow.transport_mode || 'N/A'}</p>
-                    <p><strong>Vehicle Number:</strong> {detailRow.vehicle_number || detailRow.vehicle_no || 'N/A'}</p>
-                    <p><strong>Driver Name:</strong> {detailRow.driver_name || 'N/A'}</p>
-                    <p><strong>Delivery Comments:</strong> {detailRow.delivery_comment || 'N/A'}</p>
+                    <p>
+                      <strong>Transport Mode:</strong>{" "}
+                      {detailRow.transport_mode || "N/A"}
+                    </p>
+                    <p>
+                      <strong>Vehicle Number:</strong>{" "}
+                      {detailRow.vehicle_number ||
+                        detailRow.vehicle_no ||
+                        "N/A"}
+                    </p>
+                    <p>
+                      <strong>Driver Name:</strong>{" "}
+                      {detailRow.driver_name || "N/A"}
+                    </p>
+                    <p>
+                      <strong>Delivery Comments:</strong>{" "}
+                      {detailRow.delivery_comment || "N/A"}
+                    </p>
                   </div>
                 </div>
 
@@ -367,31 +465,64 @@ const Approvals = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {detailRow.materials && typeof detailRow.materials === 'string' ? (
-                          JSON.parse(detailRow.materials).map((material, index) => (
-                            <tr key={index}>
-                              <td>{material.description}</td>
-                              <td>{material.serialNumber || material.serial_number}</td>
-                              <td>{material.quantity || material.qty}</td>
-                              <td>{material.uom}</td>
-                              <td>{material.isReturnable ? 'Yes' : material.returnable ? 'Yes' : 'No'}</td>
-                              <td>{material.returnDate || material.return_date || 'N/A'}</td>
-                            </tr>
-                          ))
+                        {detailRow.materials &&
+                        typeof detailRow.materials === "string" ? (
+                          JSON.parse(detailRow.materials).map(
+                            (material, index) => (
+                              <tr key={index}>
+                                <td>{material.description}</td>
+                                <td>
+                                  {material.serialNumber ||
+                                    material.serial_number}
+                                </td>
+                                <td>{material.quantity || material.qty}</td>
+                                <td>{material.uom}</td>
+                                <td>
+                                  {material.isReturnable
+                                    ? "Yes"
+                                    : material.returnable
+                                    ? "Yes"
+                                    : "No"}
+                                </td>
+                                <td>
+                                  {material.returnDate ||
+                                    material.return_date ||
+                                    "N/A"}
+                                </td>
+                              </tr>
+                            )
+                          )
                         ) : detailRow.materials ? (
                           detailRow.materials.map((material, index) => (
                             <tr key={index}>
-                              <td>{material.description || material.item_name}</td>
-                              <td>{material.serialNumber || material.serial_number}</td>
+                              <td>
+                                {material.description || material.item_name}
+                              </td>
+                              <td>
+                                {material.serialNumber ||
+                                  material.serial_number}
+                              </td>
                               <td>{material.quantity || material.qty}</td>
                               <td>{material.uom}</td>
-                              <td>{material.isReturnable ? 'Yes' : material.returnable ? 'Yes' : 'No'}</td>
-                              <td>{material.returnDate || material.return_date || 'N/A'}</td>
+                              <td>
+                                {material.isReturnable
+                                  ? "Yes"
+                                  : material.returnable
+                                  ? "Yes"
+                                  : "No"}
+                              </td>
+                              <td>
+                                {material.returnDate ||
+                                  material.return_date ||
+                                  "N/A"}
+                              </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="6" className="text-center">No materials listed</td>
+                            <td colSpan="6" className="text-center">
+                              No materials listed
+                            </td>
                           </tr>
                         )}
                       </tbody>
@@ -402,7 +533,7 @@ const Approvals = () => {
                 <div className="row">
                   <div className="col-12">
                     <h6>Remarks</h6>
-                    <p>{detailRow.remarks || 'No remarks provided'}</p>
+                    <p>{detailRow.remarks || "No remarks provided"}</p>
                   </div>
                 </div>
               </div>
