@@ -1,92 +1,169 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import companyLogo from "../assets/LOGO.png";
 
 const Sidebar = () => {
   const { user } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   return (
-    <div className="bg-light border-end vh-100 p-3" style={{ width: "280px", minWidth: "280px" }}>
-      {/* Company Logo Section */}
-      <div className="d-flex align-items-center mb-4 p-3 bg-white rounded shadow-sm">
+    <div 
+      className="bg-light border-end vh-100 p-3 transition-all" 
+      style={{ 
+        width: isCollapsed ? "80px" : "220px", 
+        minWidth: isCollapsed ? "80px" : "220px",
+        transition: "width 0.3s ease"
+      }}
+    >
+      {/* Company Logo Section with Toggle */}
+      <div className={`d-flex align-items-center mb-4 ${isCollapsed ? 'justify-content-center' : ''}`}>
+        {/* Toggle Button - 3 lines icon positioned to the left of logo */}
+        {!isCollapsed && (
+          <button
+            className="btn p-0 me-3"
+            onClick={toggleSidebar}
+            style={{ 
+              border: "none", 
+              background: "none",
+              fontSize: "1.2rem",
+              color: "#6c757d"
+            }}
+          >
+            <i className="bi bi-list"></i>
+          </button>
+        )}
+        
         <img 
           src={companyLogo} 
           alt="Company Logo" 
           className="img-fluid"
           style={{ 
-            height: "60px",
+            height: isCollapsed ? "60px" : "100px",
             width: "auto",
-            maxWidth: "100px",
+            maxWidth: isCollapsed ? "60px" : "160px",
             objectFit: "contain",
-            marginRight: "15px",
-            filter: "drop-shadow(2px 2px 4px rgba(0,0,0,0.1))"
-          }} 
+            filter: "drop-shadow(2px 2px 4px rgba(0,0,0,0.1))",
+            transition: "all 0.3s ease",
+            cursor: isCollapsed ? "pointer" : "default"
+          }}
+          onClick={isCollapsed ? toggleSidebar : undefined}
+          title={isCollapsed ? "Expand sidebar" : ""}
         />
-        <h4 className="m-0 text-primary fw-bold" style={{ fontSize: "1.25rem" }}>
-          Gatepass System
-        </h4>
       </div>
       
       <ul className="nav flex-column">
         {/* Main Navigation */}
         <li className="nav-item mb-1">
-          <Link className="nav-link py-2 px-3 rounded" to="/dashboard">
-            <i className="bi bi-speedometer2 me-1"></i> Dashboard
+          <Link 
+            className="nav-link py-2 px-3 rounded d-flex align-items-center" 
+            to="/dashboard"
+            title="Dashboard"
+          >
+            <i className="bi bi-speedometer2"></i>
+            {!isCollapsed && <span className="ms-2">Dashboard</span>}
           </Link>
         </li>
 
         <li className="nav-item mb-1">
-          <Link className="nav-link py-2 px-3 rounded" to="/gatepass/new">
-            <i className="bi bi-pencil-square me-1"></i> New Gate-Pass
+          <Link 
+            className="nav-link py-2 px-3 rounded d-flex align-items-center" 
+            to="/gatepass/new"
+            title="New Gate-Pass"
+          >
+            <i className="bi bi-pencil-square"></i>
+            {!isCollapsed && <span className="ms-2">New Gate-Pass</span>}
           </Link>
         </li>
 
         <li className="nav-item mb-2">
-          <Link className="nav-link py-2 px-3 rounded" to="/my-requests">
-            <i className="bi bi-list-check me-1"></i> My Requests
+          <Link 
+            className="nav-link py-2 px-3 rounded d-flex align-items-center" 
+            to="/my-requests"
+            title="My Requests"
+          >
+            <i className="bi bi-list-check"></i>
+            {!isCollapsed && <span className="ms-2">My Requests</span>}
           </Link>
         </li>
 
         <li className="nav-item mb-2">
-          <Link className="nav-link py-2 px-3 rounded" to="/approvals">
-            <i className="bi bi-check2-square me-1"></i> Approvals
+          <Link 
+            className="nav-link py-2 px-3 rounded d-flex align-items-center" 
+            to="/approvals"
+            title="Approvals"
+          >
+            <i className="bi bi-check2-square"></i>
+            {!isCollapsed && <span className="ms-2">Approvals</span>}
           </Link>
         </li>
 
         <li className="nav-item mb-2">
-          <Link className="nav-link py-2 px-3 rounded" to="/deliveries">
-            <i className="bi bi-truck me-1"></i> Gatepasses
+          <Link 
+            className="nav-link py-2 px-3 rounded d-flex align-items-center" 
+            to="/deliveries"
+            title="Gatepasses"
+          >
+            <i className="bi bi-truck"></i>
+            {!isCollapsed && <span className="ms-2">Gatepasses</span>}
           </Link>
         </li>
 
         {/* Admin Section */}
         {user?.role === "Admin" && (
           <>
-            <hr className="my-3" />
-            <h6 className="text-muted px-3 mb-2">Admin</h6>
+            {!isCollapsed && <hr className="my-3" />}
+            {isCollapsed && <div className="border-top my-3"></div>}
+            {!isCollapsed && <h6 className="text-muted px-3 mb-2">Admin</h6>}
+            
             <li className="nav-item mb-2">
-              <Link className="nav-link py-2 px-3 rounded" to="/users">
-                <i className="bi bi-people me-1"></i> Users
+              <Link 
+                className="nav-link py-2 px-3 rounded d-flex align-items-center" 
+                to="/users"
+                title="Users"
+              >
+                <i className="bi bi-people"></i>
+                {!isCollapsed && <span className="ms-2">Users</span>}
               </Link>
             </li>
             <li className="nav-item mb-2">
-              <Link className="nav-link py-2 px-3 rounded" to="/locations">
-                <i className="bi bi-geo-alt me-1"></i> Locations
+              <Link 
+                className="nav-link py-2 px-3 rounded d-flex align-items-center" 
+                to="/locations"
+                title="Locations"
+              >
+                <i className="bi bi-geo-alt"></i>
+                {!isCollapsed && <span className="ms-2">Locations</span>}
               </Link>
             </li>
             <li className="nav-item mb-2">
-              <Link className="nav-link py-2 px-3 rounded" to="/departments">
-                <i className="bi bi-building me-1"></i> Departments
+              <Link 
+                className="nav-link py-2 px-3 rounded d-flex align-items-center" 
+                to="/departments"
+                title="Departments"
+              >
+                <i className="bi bi-building"></i>
+                {!isCollapsed && <span className="ms-2">Departments</span>}
               </Link>
             </li>
           </>
         )}
 
-        <hr className="my-3" />
+        {!isCollapsed && <hr className="my-3" />}
+        {isCollapsed && <div className="border-top my-3"></div>}
+        
         <li className="nav-item">
-          <Link className="nav-link py-2 px-3 rounded text-danger" to="/logout">
-            <i className="bi bi-box-arrow-right me-1"></i> Logout
+          <Link 
+            className="nav-link py-2 px-3 rounded text-danger d-flex align-items-center" 
+            to="/logout"
+            title="Logout"
+          >
+            <i className="bi bi-box-arrow-right"></i>
+            {!isCollapsed && <span className="ms-2">Logout</span>}
           </Link>
         </li>
       </ul>
