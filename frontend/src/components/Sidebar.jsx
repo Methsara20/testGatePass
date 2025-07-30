@@ -121,7 +121,7 @@ const Sidebar = () => {
             title="Gatepasses"
           >
             <i className="bi bi-truck"></i>
-            {!isCollapsed && <span className="ms-2">Gatepasses</span>}
+            {!isCollapsed && <span className="ms-2">Gatepasses Acceptance</span>}
           </Link>
         </li>
 

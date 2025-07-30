@@ -259,7 +259,7 @@ const Approvals = () => {
           <table className="table align-middle">
             <thead className="table-light">
               <tr>
-                <th>ID</th>
+                <th>Gate Pass No</th>
                 <th>Type</th>
                 <th>Status</th>
                 <th>Date</th>

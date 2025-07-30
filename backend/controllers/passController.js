@@ -96,7 +96,9 @@ exports.addGatepass = (req, res) => {
 };
 
 
-// Update gate pass request
+
+
+// Updated updateGatepass function
 exports.updateGatepass = (req, res) => {
   const { id } = req.params;
   const {
@@ -122,6 +124,19 @@ exports.updateGatepass = (req, res) => {
     approved_by
   } = req.body;
 
+  // Parse materials from request body (similar to addGatepass)
+  let materials = [];
+  if (req.body.materials) {
+    try {
+      materials = JSON.parse(req.body.materials);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid materials format' });
+    }
+  }
+
+  console.log('Updating gate pass ID:', id);
+  console.log('Materials to update:', materials);
+
   const query = `
     UPDATE gate_pass_requests
     SET request_type = ?, request_date = ?, request_time = ?, location = ?,
@@ -138,11 +153,69 @@ exports.updateGatepass = (req, res) => {
     destination_address, department, transport_mode, vehicle_no,
     driver_name, remarks, created_by, approved_by, id
   ], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error('Error updating gate pass:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Gate Pass not found' });
     }
-    res.json({ message: 'Gate Pass updated successfully' });
+
+    console.log('Gate pass updated, now updating materials...');
+
+    // Handle materials update
+    if (Array.isArray(materials)) {
+      // First, delete existing materials for this gate pass
+      const deleteMaterialsQuery = 'DELETE FROM gate_pass_materials WHERE gate_pass_id = ?';
+      
+      db.query(deleteMaterialsQuery, [id], (deleteErr) => {
+        if (deleteErr) {
+          console.error('Error deleting existing materials:', deleteErr);
+          return res.status(500).json({ error: deleteErr.message });
+        }
+
+        console.log('Existing materials deleted, inserting new materials...');
+
+        // Insert new materials if any exist
+        if (materials.length > 0) {
+          const insertMaterialQuery = `
+            INSERT INTO gate_pass_materials (
+              gate_pass_id, description, serial_number, qty, uom, returnable, return_date
+            ) VALUES ?`;
+
+          const materialValues = materials.map(item => [
+            id,
+            item.description || '',
+            item.serial_number || item.serialNumber || '',
+            item.quantity || item.qty || 0,
+            item.uom || '',
+            item.returnable ? 1 : 0,
+            item.returnable ? (item.return_date || null) : null
+          ]);
+
+          console.log('Inserting material values:', materialValues);
+
+          db.query(insertMaterialQuery, [materialValues], (matErr) => {
+            if (matErr) {
+              console.error('Error inserting materials:', matErr);
+              return res.status(500).json({ error: matErr.message });
+            }
+            
+            console.log('Materials updated successfully');
+            res.json({ message: 'Gate Pass and materials updated successfully' });
+          });
+        } else {
+          // No materials to insert, just return success
+          console.log('No materials to insert, update complete');
+          res.json({ message: 'Gate Pass updated successfully (no materials)' });
+        }
+      });
+    } else {
+      // No materials provided, just return success for gate pass update
+      console.log('No materials provided, gate pass update complete');
+      res.json({ message: 'Gate Pass updated successfully' });
+    }
   });
 };
 

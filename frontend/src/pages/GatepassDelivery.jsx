@@ -147,7 +147,7 @@ const GatepassDelivery = () => {
           <table className="table align-middle">
             <thead className="table-light">
               <tr>
-                <th>ID</th>
+                <th>Gate Pass No</th>
                 <th>Date</th>
                 <th>From Location</th>
                 <th>Actions</th>
