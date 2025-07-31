@@ -2,6 +2,7 @@ const db = require('../config/db');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 
+
 // Get all gate pass requests
 exports.getPasses = (req, res) => {
   db.query('SELECT * FROM gate_pass_requests', (err, results) => {

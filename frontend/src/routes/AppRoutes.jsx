@@ -11,6 +11,14 @@ import Approvals from '../pages/Approvals';
 import MyRequests from '../pages/MyRequests';
 import GatepassDelivery from '../pages/GatepassDelivery';
 
+//reports
+import GatePassSummaryReport from '../reports/GatePassSummaryReport';
+import OverdueMaterialsReport from '../reports/OverdueMaterialsReport';
+import ApprovedVsRejectedReport from '../reports/ApprovedVsRejectedReport';
+//import AuditLogReport from '../reports/AuditLogReport';
+import MaterialMovementReport from '../reports/MaterialMovementReport';
+import AcceptanceReport from '../reports/AcceptanceReport';
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
 
@@ -42,6 +50,15 @@ const AppRoutes = () => {
         <Route path="/users" element={<ProtectedRoute allowedRoles={['Admin']}><UsersPage /></ProtectedRoute>} />
         <Route path="/locations" element={<ProtectedRoute allowedRoles={['Admin']}><LocationsPage /></ProtectedRoute>} />
         <Route path="/departments" element={<ProtectedRoute allowedRoles={['Admin']}><DepartmentsPage /></ProtectedRoute>} />
+
+
+        {/* Reports (Admin & HOD only) */}
+        <Route path="/reports/gatepass-summary" element={<ProtectedRoute allowedRoles={['Admin', 'HOD']}><GatePassSummaryReport /></ProtectedRoute>}/>
+        <Route path="/reports/overdue-materials" element={<ProtectedRoute allowedRoles={['Admin', 'HOD']}><OverdueMaterialsReport /></ProtectedRoute>}/>
+        <Route path="/reports/approved-vs-rejected" element={<ProtectedRoute allowedRoles={['Admin', 'HOD']}><ApprovedVsRejectedReport /></ProtectedRoute>}/>
+        {/* <Route path="/reports/audit-log" element={<ProtectedRoute allowedRoles={['Admin', 'HOD']}><AuditLogReport /></ProtectedRoute>}/> */}
+        <Route path="/reports/material-movement" element={<ProtectedRoute allowedRoles={['Admin', 'HOD']}><MaterialMovementReport /></ProtectedRoute>}/>
+        <Route path="/reports/acceptance-report" element={<ProtectedRoute allowedRoles={['Admin', 'HOD']}><AcceptanceReport /></ProtectedRoute> }/>
 
 
         <Route path="/unauthorized" element={<h3 className="text-center mt-5">Unauthorized Access</h3>} />

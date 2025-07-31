@@ -1,36 +1,3 @@
-// const express = require('express');
-// const cors = require('cors');
-// const dotenv = require('./config/dotenv');
-// const userRoutes = require('./routes/userRoutes');
-// const approvalRoutes = require('./routes/approvalRoutes');
-// const passRoutes = require('./routes/passRoutes');
-// const dashboardRoutes = require('./routes/dashboardRoutes');
-// const { errorHandler } = require('./utils/errorHandler');
-// const { logger } = require('./utils/logger');
-
-
-// const app = express();
-
-// // Middleware
-// app.use(cors());
-// app.use(express.json());
-// app.use(logger);
-
-// // Routes
-// app.use('/api/users', userRoutes);
-// app.use('/api/approvals', approvalRoutes);
-// app.use('/api/passes', passRoutes);
-// app.use('/api/dashboard',dashboardRoutes);
-
-// // Error handler
-// app.use(errorHandler);
-
-// const PORT = dotenv.PORT;
-// app.listen(PORT, () => {
-//     console.log(`Server running on port ${PORT}`);
-// });
-
-
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('./config/dotenv');
@@ -40,6 +7,7 @@ const passRoutes = require('./routes/passRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const locationRoutes = require('./routes/locationRoutes'); 
 const departmentRoutes = require('./routes/departmentRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 const { errorHandler } = require('./utils/errorHandler');
 const { logger } = require('./utils/logger');
 
@@ -67,7 +35,7 @@ app.use('/api/passes', passRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/departments', departmentRoutes); 
-
+app.use('/api/reports', reportRoutes);
 
 
 // Error handler
