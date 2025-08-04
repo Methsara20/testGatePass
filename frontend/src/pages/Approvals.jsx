@@ -99,31 +99,28 @@ const Approvals = () => {
         toast.error('You must be logged in to reject requests');
         return;
       }
-    
+  
       const toastId = toast.loading('Rejecting request...');
-      await rejectPass(rejectId);
-    
+      await rejectPass(rejectId, user.id);  
+  
       toast.update(toastId, {
         render: 'Request rejected successfully!',
         type: 'success',
         isLoading: false,
         autoClose: 3000,
       });
-    
+  
       setRejectId(null);
       load();
     } catch (error) {
       console.error('Rejection failed:', error);
       toast.error(
-        error.response?.data?.message || 
-          'Failed to reject request. Please try again.',
-        {
-          autoClose: 5000,
-        }
+        error.response?.data?.message || 'Failed to reject request. Please try again.',
+        { autoClose: 5000 }
       );
     }
   };
-
+  
   useEffect(() => {
     if (searchTerm === "") {
       setFilteredPasses(lists[tab] || []);

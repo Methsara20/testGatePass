@@ -161,7 +161,7 @@ const OverdueMaterialsReport = () => {
                     <th>Gate Pass ID</th>
                     <th>Material</th>
                     <th>Quantity</th>
-                    <th>Issuer</th>
+                    <th>Requester</th>
                     <th>Receiver</th>
                     <th>
                       <OverlayTrigger

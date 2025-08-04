@@ -313,13 +313,40 @@ exports.approveGatepass = (req, res) => {
 };
 
 // Reject gate pass
+// exports.rejectGatepass = (req, res) => {
+//   const { id } = req.params;
+//   db.query('UPDATE gate_pass_requests SET status = "Rejected", approved_by = ? WHERE gate_pass_id = ?', [id], (err) => {
+//     if (err) return res.status(500).json({ error: err.message });
+//     res.json({ message: 'Request rejected' });
+//   });
+// };
+
+// Reject gate pass
 exports.rejectGatepass = (req, res) => {
   const { id } = req.params;
-  db.query('UPDATE gate_pass_requests SET status = "Rejected" WHERE gate_pass_id = ?', [id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Request rejected' });
-  });
+  const { rejected_by } = req.body; // Get rejector ID from request body
+
+  // Validate input
+  if (!rejected_by) {
+    return res.status(400).json({ error: 'Rejector ID is required' });
+  }
+
+  db.query(
+    'UPDATE gate_pass_requests SET status = "Rejected", approved_by = ? WHERE gate_pass_id = ?',
+    [rejected_by, id],
+    (err, result) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error', details: err.message });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Gate pass not found' });
+      }
+      res.json({ message: 'Request rejected successfully' });
+    }
+  );
 };
+
 
 // Get gate passes by user
 exports.getMyRequests = (req, res) => {

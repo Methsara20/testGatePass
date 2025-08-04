@@ -216,11 +216,12 @@ const GatePassSummaryReport = () => {
                 <thead className="table-dark">
                   <tr>
                     <th className="px-3 py-3">Gate Pass ID</th>
-                    <th className="px-3 py-3">Requester</th>
+                    <th className="px-3 py-3">Requester Name</th>
                     <th className="px-3 py-3">Department</th>
                     <th className="px-3 py-3">From Location</th>
                     <th className="px-3 py-3">To Location</th>
                     <th className="px-3 py-3">Receiver</th>
+                    <th className="px-3 py-3">Approved BY</th>
                     <th className="px-3 py-3">Status</th>
                     <th className="px-3 py-3">Date</th>
                   </tr>
@@ -239,11 +240,12 @@ const GatePassSummaryReport = () => {
                         <td className="px-3 py-3">
                           <span className="fw-bold text-primary">REQ-{row.gate_pass_id}</span>
                         </td>
-                        <td className="px-3 py-3">{row.requester || 'N/A'}</td>
+                        <td className="px-3 py-3">{row.requester_name || 'N/A'}</td>
                         <td className="px-3 py-3">{row.department || 'N/A'}</td>
                         <td className="px-3 py-3">{row.from_location || 'N/A'}</td>
                         <td className="px-3 py-3">{row.to_location || 'N/A'}</td>
                         <td className="px-3 py-3">{row.receiver_name || 'N/A'}</td>
+                        <td className="px-3 py-3">{row.approved_by_name || 'N/A'}</td>
                         <td className="px-3 py-3">{getStatusBadge(row.status)}</td>
                         <td className="px-3 py-3">
                           {row.created_at ? new Date(row.created_at).toLocaleDateString('en-US', {

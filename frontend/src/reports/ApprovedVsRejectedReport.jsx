@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
-import { getApprovedVsRejected, exportApprovedVsRejected } from '../services/reportService';
+import React, { useState, useEffect } from "react";
+import Sidebar from "../components/Sidebar";
+import {
+  getApprovedVsRejected,
+  exportApprovedVsRejected,
+} from "../services/reportService";
 import {
   Container,
   Table,
@@ -12,46 +15,58 @@ import {
   Form,
   Badge,
   Alert,
-} from 'react-bootstrap';
-import { saveAs } from 'file-saver';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { BiDownload, BiRefresh, BiCheckCircle, BiXCircle } from 'react-icons/bi';
-import { FaFileAlt } from 'react-icons/fa';
+} from "react-bootstrap";
+import { saveAs } from "file-saver";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  BiDownload,
+  BiRefresh,
+  BiCheckCircle,
+  BiXCircle,
+} from "react-icons/bi";
+import { FaFileAlt } from "react-icons/fa";
 
-const COLORS = ['#28a745', '#dc3545', '#ffc107', '#6c757d'];
+const COLORS = ["#28a745", "#dc3545", "#ffc107", "#6c757d"];
 
 const ApprovedVsRejectedReport = () => {
   const [reportData, setReportData] = useState({ counts: [], details: [] });
   const [filteredDetails, setFilteredDetails] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const fetchReport = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const res = await getApprovedVsRejected();
       setReportData(res.data);
       setFilteredDetails(res.data.details);
     } catch (err) {
       console.error(err);
-      setError('⚠️ Failed to fetch report data. Please try again.');
+      setError("⚠️ Failed to fetch report data. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleExport = async () => {
-    if (!reportData.details.length) return alert('No data to export!');
+    if (!reportData.details.length) return alert("No data to export!");
     setExporting(true);
     try {
       const res = await exportApprovedVsRejected();
-      saveAs(new Blob([res.data]), 'Approved_vs_Rejected.xlsx');
+      saveAs(new Blob([res.data]), "Approved_vs_Rejected.xlsx");
     } catch (err) {
       console.error(err);
-      alert('Export failed!');
+      alert("Export failed!");
     } finally {
       setExporting(false);
     }
@@ -64,7 +79,8 @@ const ApprovedVsRejectedReport = () => {
       reportData.details.filter(
         (row) =>
           row.gate_pass_id.toString().includes(term) ||
-          row.requester?.toLowerCase().includes(term) ||
+          row.requester_name?.toLowerCase().includes(term) ||
+          row.approved_by_name?.toLowerCase().includes(term) ||
           row.department?.toLowerCase().includes(term) ||
           row.from_location?.toLowerCase().includes(term) ||
           row.to_location?.toLowerCase().includes(term) ||
@@ -75,17 +91,17 @@ const ApprovedVsRejectedReport = () => {
   };
 
   const getStatusBadge = (status) => {
-    if (!status || typeof status !== 'string')
+    if (!status || typeof status !== "string")
       return <Badge bg="secondary">Unknown</Badge>;
 
     switch (status.toLowerCase()) {
-      case 'approved':
+      case "approved":
         return (
           <Badge bg="success" className="d-flex align-items-center">
             <BiCheckCircle className="me-1" /> Approved
           </Badge>
         );
-      case 'rejected':
+      case "rejected":
         return (
           <Badge bg="danger" className="d-flex align-items-center">
             <BiXCircle className="me-1" /> Rejected
@@ -113,7 +129,11 @@ const ApprovedVsRejectedReport = () => {
             </p>
           </div>
           <div className="d-flex gap-2">
-            <Button variant="outline-primary" onClick={fetchReport} disabled={loading}>
+            <Button
+              variant="outline-primary"
+              onClick={fetchReport}
+              disabled={loading}
+            >
               {loading ? (
                 <Spinner size="sm" animation="border" className="me-2" />
               ) : (
@@ -138,7 +158,7 @@ const ApprovedVsRejectedReport = () => {
 
         {/* Error Alert */}
         {error && (
-          <Alert variant="danger" dismissible onClose={() => setError('')}>
+          <Alert variant="danger" dismissible onClose={() => setError("")}>
             {error}
           </Alert>
         )}
@@ -186,7 +206,9 @@ const ApprovedVsRejectedReport = () => {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-muted text-center mb-0">No data to display</p>
+                  <p className="text-muted text-center mb-0">
+                    No data to display
+                  </p>
                 )}
               </Card.Body>
             </Card>
@@ -207,7 +229,7 @@ const ApprovedVsRejectedReport = () => {
               </Col>
               <Col md={6} className="text-end">
                 <small className="text-muted">
-                  Showing <strong>{filteredDetails.length}</strong> of{' '}
+                  Showing <strong>{filteredDetails.length}</strong> of{" "}
                   <strong>{reportData.details.length}</strong> records
                 </small>
               </Col>
@@ -224,6 +246,7 @@ const ApprovedVsRejectedReport = () => {
                   <tr>
                     <th>Gate Pass ID</th>
                     <th>Requester</th>
+                    <th>Approved By</th> {/* ✅ NEW */}
                     <th>Department</th>
                     <th>From</th>
                     <th>To</th>
@@ -235,26 +258,29 @@ const ApprovedVsRejectedReport = () => {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="8" className="text-center py-4">
+                      <td colSpan="9" className="text-center py-4">
                         <Spinner animation="border" /> Loading report data...
                       </td>
                     </tr>
                   ) : filteredDetails.length > 0 ? (
                     filteredDetails.map((row) => (
                       <tr key={row.gate_pass_id}>
-                        <td className="fw-bold text-primary">REQ-{row.gate_pass_id}</td>
-                        <td>{row.requester}</td>
+                        <td className="fw-bold text-primary">
+                          REQ-{row.gate_pass_id}
+                        </td>
+                        <td>{row.requester_name || "-"}</td>{" "}
+                        <td>{row.approved_by_name || "-"}</td>{" "}
                         <td>{row.department}</td>
                         <td>{row.from_location}</td>
                         <td>{row.to_location}</td>
-                        <td>{row.receiver_name || '-'}</td>
+                        <td>{row.receiver_name || "-"}</td>
                         <td>{getStatusBadge(row.status)}</td>
                         <td>{new Date(row.created_at).toLocaleDateString()}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="8" className="text-center py-4 text-muted">
+                      <td colSpan="9" className="text-center py-4 text-muted">
                         <FaFileAlt size={40} className="mb-2 opacity-50" />
                         <p className="mb-0">No records found</p>
                         <small>Try adjusting your search or filters</small>

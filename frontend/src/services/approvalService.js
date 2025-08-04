@@ -7,7 +7,12 @@ export const fetchSummary = (location, department) =>
     axios.get(`${API}/summary`, { params: { location, department } });
   
 //export const approvePass  =  id => axios.put(`${API}/${id}/approve`);
-export const rejectPass   =  id => axios.put(`${API}/${id}/reject`);
+// export const rejectPass   =  id => axios.put(`${API}/${id}/reject`);
+export const rejectPass = (id, rejected_by) => 
+    axios.put(`${API}/${id}/reject`, { rejected_by });
+
+
+  
 export const fetchGatePassWithMaterials = (id) =>
     axios.get(`http://192.168.10.144:5000/api/passes/${id}/materials`);
 

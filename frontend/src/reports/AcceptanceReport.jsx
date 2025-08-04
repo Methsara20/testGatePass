@@ -118,12 +118,12 @@ const AcceptanceReport = () => {
                     {reportData.map((row, idx) => (
                       <tr key={row.gate_pass_id || idx}>
                         <td className="fw-bold text-primary">REQ-{row.gate_pass_id}</td>
-                        <td>{row.requester || '-'}</td>
-                        <td>{row.receiver || '-'}</td>
+                        <td>{row.created_by_name || '-'}</td>
+                        <td>{row.receiver_name || '-'}</td>
                         <td>
-                          <Badge bg="success" className="px-2 py-1">{row.accepted_by || 'N/A'}</Badge>
+                          <Badge bg="success" className="px-2 py-1">{row.approved_by_name || 'N/A'}</Badge>
                         </td>
-                        <td>{row.accepted_date ? new Date(row.accepted_date).toLocaleDateString() : '-'}</td>
+                        <td>{row.updated_at ? new Date(row.updated_at).toLocaleDateString() : '-'}</td>
                       </tr>
                     ))}
                   </tbody>

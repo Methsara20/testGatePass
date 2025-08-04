@@ -115,7 +115,7 @@ const MaterialMovementReport = () => {
                   <tr>
                     <th>Material</th>
                     <th>Quantity</th>
-                    <th>Issuer</th>
+                    <th>Requester</th>
                     <th>Receiver</th>
                     <th>Out Date</th>
                     <th>In Date</th>
