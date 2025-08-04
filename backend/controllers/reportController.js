@@ -440,7 +440,7 @@ exports.getAcceptanceReport = (req, res) => {
         gpr.updated_at AS accepted_date
       FROM gate_pass_requests gpr
       LEFT JOIN users u_requester ON gpr.created_by = u_requester.id
-      LEFT JOIN users u_acceptor ON gpr.approved_by = u_acceptor.id
+      LEFT JOIN users u_acceptor ON gpr.accepted_by = u_acceptor.id
       ${conditionClause}
       ORDER BY gpr.updated_at DESC;
     `;
@@ -469,7 +469,7 @@ exports.getAcceptanceReport = (req, res) => {
         gpr.updated_at AS accepted_date
       FROM gate_pass_requests gpr
       LEFT JOIN users u_requester ON gpr.created_by = u_requester.id
-      LEFT JOIN users u_acceptor ON gpr.approved_by = u_acceptor.id
+      LEFT JOIN users u_acceptor ON gpr.accepted_by = u_acceptor.id
       ${whereClause}
       AND gpr.delivery_status = 'Accepted'
       ORDER BY gpr.updated_at DESC;
