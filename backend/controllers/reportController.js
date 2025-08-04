@@ -422,53 +422,74 @@ exports.exportMaterialMovement = (req, res) => {
 
 exports.getAcceptanceReport = (req, res) => {
     const { whereClause, values } = buildFilters(req.query);
-
-    const conditionClause = whereClause 
-        ? `${whereClause} AND gpr.delivery_status = 'Accepted'`
-        : `WHERE gpr.delivery_status = 'Accepted'`;
-
+  
+    const conditionClause = whereClause
+      ? `${whereClause} AND gpr.delivery_status = 'Accepted'`
+      : `WHERE gpr.delivery_status = 'Accepted'`;
+  
     const query = `
-        SELECT gpr.gate_pass_id, 
-               gpr.created_by AS requester,
-               gpr.receiver_name AS receiver, 
-               gpr.approved_by AS accepted_by,
-               gpr.updated_at AS accepted_date
-        FROM gate_pass_requests gpr
-        ${conditionClause}
-        ORDER BY gpr.updated_at DESC;
+      SELECT 
+        gpr.gate_pass_id,
+        u_requester.full_name AS requester,
+        u_requester.department AS requester_department,
+        u_requester.location AS requester_location,
+        gpr.receiver_name AS receiver,
+        u_acceptor.full_name AS accepted_by,
+        u_acceptor.department AS acceptor_department,
+        u_acceptor.location AS acceptor_location,
+        gpr.updated_at AS accepted_date
+      FROM gate_pass_requests gpr
+      LEFT JOIN users u_requester ON gpr.created_by = u_requester.id
+      LEFT JOIN users u_acceptor ON gpr.approved_by = u_acceptor.id
+      ${conditionClause}
+      ORDER BY gpr.updated_at DESC;
     `;
-
+  
     db.query(query, values, (err, results) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(results);
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(results);
     });
-};
-
-
-
-
-
-exports.exportAcceptanceReport = (req, res) => {
+  };
+  
+  exports.exportAcceptanceReport = (req, res) => {
     const { whereClause, values } = buildFilters(req.query);
+  
     const query = `
-        SELECT gpr.gate_pass_id, gpr.created_by AS requester,
-               gpr.receiver_name AS receiver, gpr.approved_by AS accepted_by,
-               gpr.updated_at AS accepted_date
-        FROM gate_pass_requests gpr
-        ${whereClause}
-        AND gpr.delivery_status = 'Accepted'
-        ORDER BY gpr.updated_at DESC;
+      SELECT 
+        gpr.gate_pass_id,
+        u_requester.full_name AS requester,
+        u_requester.department AS requester_department,
+        u_requester.location AS requester_location,
+        gpr.receiver_name AS receiver,
+        u_acceptor.full_name AS accepted_by,
+        u_acceptor.department AS acceptor_department,
+        u_acceptor.location AS acceptor_location,
+        gpr.updated_at AS accepted_date
+      FROM gate_pass_requests gpr
+      LEFT JOIN users u_requester ON gpr.created_by = u_requester.id
+      LEFT JOIN users u_acceptor ON gpr.approved_by = u_acceptor.id
+      ${whereClause}
+      AND gpr.delivery_status = 'Accepted'
+      ORDER BY gpr.updated_at DESC;
     `;
+  
     db.query(query, values, async (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        await exportToExcel(res, 'Acceptance_Report', [
-            { header: 'Gate Pass ID', key: 'gate_pass_id' },
-            { header: 'Requester', key: 'requester' },
-            { header: 'Receiver', key: 'receiver' },
-            { header: 'Accepted By', key: 'accepted_by' },
-            { header: 'Accepted Date', key: 'accepted_date' }
-        ], results);
+      if (err) return res.status(500).json({ error: err.message });
+  
+      await exportToExcel(res, 'Acceptance_Report', [
+        { header: 'Gate Pass ID', key: 'gate_pass_id' },
+        { header: 'Requester', key: 'requester' },
+        { header: 'Requester Department', key: 'requester_department' },
+        { header: 'Requester Location', key: 'requester_location' },
+        { header: 'Receiver', key: 'receiver' },
+        { header: 'Accepted By', key: 'accepted_by' },
+        { header: 'Acceptor Department', key: 'acceptor_department' },
+        { header: 'Acceptor Location', key: 'acceptor_location' },
+        { header: 'Accepted Date', key: 'accepted_date' }
+      ], results);
     });
-};
+  };
+  
+  

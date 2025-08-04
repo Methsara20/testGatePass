@@ -1,8 +1,15 @@
 import axios from 'axios';
 const BASE = 'http://192.168.10.144:5000/api/passes';
 
-// export const fetchDeliveries  = () => axios.get(`${BASE}/deliveries`);
+// Fetch deliveries with filters
 export const fetchDeliveries = (location, department) => 
   axios.get(`${BASE}/deliveries`, { params: { location, department } });
-export const acceptDelivery   = (id) => axios.put(`${BASE}/${id}/accept`);
-export const rejectDelivery   = (id, comment) => axios.put(`${BASE}/${id}/issue`, { comment });
+
+// Accept delivery (include accepted_by)
+export const acceptDelivery = (id, accepted_by) => 
+  axios.put(`${BASE}/${id}/accept`, { accepted_by }); 
+
+// Reject delivery with comment and rejected_by
+export const rejectDelivery = (id, comment, accepted_by) => 
+  axios.put(`${BASE}/${id}/issue`, { comment, accepted_by });
+

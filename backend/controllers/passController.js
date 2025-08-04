@@ -35,7 +35,8 @@ exports.addGatepass = (req, res) => {
       driver_name,
       remarks,
       created_by,
-      approved_by
+      approved_by,
+      accepted_by
     } = req.body;
 
     // ✅ Parse 'materials' field from string to array
@@ -51,14 +52,14 @@ exports.addGatepass = (req, res) => {
         request_type, request_date, request_time, location, purpose,
         additional_notes, status, is_draft, is_printable, delivery_status,
         delivery_comment, receiver_name, destination_address, department, transport_mode,
-        vehicle_no, driver_name, remarks, created_by, approved_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        vehicle_no, driver_name, remarks, created_by, approved_by, accepted_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`; 
 
     const values = [
       request_type, request_date, request_time, location, purpose,
       additional_notes, status, is_draft, is_printable, delivery_status,
       delivery_comment, receiver_name, destination_address, department, transport_mode,
-      vehicle_no, driver_name, remarks, created_by, approved_by
+      vehicle_no, driver_name, remarks, created_by, approved_by, accepted_by
     ];
 
     db.query(query, values, (err, result) => {
@@ -122,7 +123,8 @@ exports.updateGatepass = (req, res) => {
     driver_name,
     remarks,
     created_by,
-    approved_by
+    approved_by,
+    accepted_by
   } = req.body;
 
   // Parse materials from request body (similar to addGatepass)
@@ -144,7 +146,7 @@ exports.updateGatepass = (req, res) => {
         purpose = ?, additional_notes = ?, status = ?, is_draft = ?, is_printable = ?,
         delivery_status = ?, delivery_comment = ?, receiver_name = ?,
         destination_address = ?, department = ?, transport_mode = ?, vehicle_no = ?,
-        driver_name = ?, remarks = ?, created_by = ?, approved_by = ?
+        driver_name = ?, remarks = ?, created_by = ?, approved_by = ?, accepted_by = ?
     WHERE gate_pass_id = ?`;
 
   db.query(query, [
@@ -152,7 +154,7 @@ exports.updateGatepass = (req, res) => {
     purpose, additional_notes, status, is_draft, is_printable,
     delivery_status, delivery_comment, receiver_name,
     destination_address, department, transport_mode, vehicle_no,
-    driver_name, remarks, created_by, approved_by, id
+    driver_name, remarks, created_by, approved_by,accepted_by, id
   ], (err, result) => {
     if (err) {
       console.error('Error updating gate pass:', err);
@@ -234,17 +236,7 @@ exports.deleteGatepass = (req, res) => {
   });
 };
 
-// Return three separate lists: Pending, Approved, Rejected
-// exports.getPassSummary = (req, res) => {
-//   db.query('SELECT * FROM gate_pass_requests ORDER BY gate_pass_id DESC', (err, rows) => {
-//     if (err) return res.status(500).json({ error: err.message });
-//     res.json({
-//       Pending: rows.filter(r => r.status === 'Pending'),
-//       Approved: rows.filter(r => r.status === 'Approved'),
-//       Rejected: rows.filter(r => r.status === 'Rejected'),
-//     });
-//   });
-// };
+
 
 
 // Return three separate lists: Pending, Approved, Rejected 
@@ -277,14 +269,7 @@ exports.getPassSummary = (req, res) => {
 
 
 
-// Approve gate pass
-// exports.approveGatepass = (req, res) => {
-//   const { id } = req.params;
-//   db.query('UPDATE gate_pass_requests SET status = "Approved", approved_by = ?, is_printable = true WHERE gate_pass_id = ?', [id], (err) => {
-//     if (err) return res.status(500).json({ error: err.message });
-//     res.json({ message: 'Request approved' });
-//   });
-// };
+
 
 // Updated approveGatepass function
 exports.approveGatepass = (req, res) => {
@@ -312,14 +297,6 @@ exports.approveGatepass = (req, res) => {
   );
 };
 
-// Reject gate pass
-// exports.rejectGatepass = (req, res) => {
-//   const { id } = req.params;
-//   db.query('UPDATE gate_pass_requests SET status = "Rejected", approved_by = ? WHERE gate_pass_id = ?', [id], (err) => {
-//     if (err) return res.status(500).json({ error: err.message });
-//     res.json({ message: 'Request rejected' });
-//   });
-// };
 
 // Reject gate pass
 exports.rejectGatepass = (req, res) => {
@@ -400,31 +377,65 @@ exports.getDeliverablePasses = (req, res) => {
 
 
 // Accept delivery
+// exports.acceptDelivery = (req, res) => {
+//   const { id } = req.params;
+//   db.query(
+//     'UPDATE gate_pass_requests SET delivery_status = "Accepted", delivery_comment = NULL WHERE gate_pass_id = ?',
+//     [id],
+//     err => {
+//       if (err) return res.status(500).json({ error: err.message });
+//       res.json({ message: 'Gate-pass marked as Accepted' });
+//     }
+//   );
+// };
+
+// // Reject delivery with comment
+// exports.rejectDelivery = (req, res) => {
+//   const { id } = req.params;
+//   const { comment } = req.body;
+//   db.query(
+//     'UPDATE gate_pass_requests SET delivery_status = "Issue", delivery_comment = ? WHERE gate_pass_id = ?',
+//     [comment || '', id],
+//     err => {
+//       if (err) return res.status(500).json({ error: err.message });
+//       res.json({ message: 'Delivery issue recorded' });
+//     }
+//   );
+// };
+
+
+// Accept delivery
 exports.acceptDelivery = (req, res) => {
   const { id } = req.params;
+  const { accepted_by } = req.body;
+
   db.query(
-    'UPDATE gate_pass_requests SET delivery_status = "Accepted", delivery_comment = NULL WHERE gate_pass_id = ?',
-    [id],
+    'UPDATE gate_pass_requests SET delivery_status = "Accepted", accepted_by = ?, delivery_comment = NULL WHERE gate_pass_id = ?',
+    [accepted_by, id],
     err => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: 'Gate-pass marked as Accepted' });
+      res.json({ message: 'Gate-pass marked as Accepted with accepted_by user' });
     }
   );
 };
 
+
 // Reject delivery with comment
 exports.rejectDelivery = (req, res) => {
   const { id } = req.params;
-  const { comment } = req.body;
+  const { comment, accepted_by } = req.body;
+
   db.query(
-    'UPDATE gate_pass_requests SET delivery_status = "Issue", delivery_comment = ? WHERE gate_pass_id = ?',
-    [comment || '', id],
+    'UPDATE gate_pass_requests SET delivery_status = "Issue", delivery_comment = ?, accepted_by = ? WHERE gate_pass_id = ?',
+    [comment || '', accepted_by, id],
     err => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: 'Delivery issue recorded' });
+      res.json({ message: 'Delivery marked as Issue with rejected_by user' });
     }
   );
 };
+
+
 
 
 exports.getGatepassWithMaterialsById = (req, res) => {

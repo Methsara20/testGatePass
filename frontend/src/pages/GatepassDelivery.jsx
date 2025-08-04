@@ -93,20 +93,21 @@ const GatepassDelivery = () => {
     if (!window.confirm("Confirm all items were received in good condition?")) {
       return;
     }
-
+  
     try {
-      await acceptDelivery(id);
-      const res = await fetchDeliveries();
+      await acceptDelivery(id, user.id);  
+      const res = await fetchDeliveries(user.location, user.department); 
       setPasses(res.data);
     } catch (error) {
       console.error("Accept failed:", error);
     }
   };
+  
 
   const handleReject = async () => {
     try {
-      await rejectDelivery(rejectId, comment);
-      const res = await fetchDeliveries();
+      await rejectDelivery(rejectId, comment, user.id);  
+      const res = await fetchDeliveries(user.location, user.department); 
       setPasses(res.data);
       setRejectId(null);
       setComment("");
@@ -114,6 +115,7 @@ const GatepassDelivery = () => {
       console.error("Reject failed:", error);
     }
   };
+  
 
   return (
     <div className="d-flex">
@@ -157,7 +159,7 @@ const GatepassDelivery = () => {
               {filteredPasses.map((p) => (
                 <tr key={p.gate_pass_id}>
                   <td className="fw-bold">{`REQ-${p.gate_pass_id}`}</td>
-                  
+
                   <td>{p.request_date}</td>
                   <td>{p.location}</td>
                   <td>
@@ -202,9 +204,16 @@ const GatepassDelivery = () => {
       </div>
 
       {/* Enhanced Details Modal */}
-      <Modal show={!!detailRow} onHide={() => setDetailRow(null)} centered size="xl">
+      <Modal
+        show={!!detailRow}
+        onHide={() => setDetailRow(null)}
+        centered
+        size="xl"
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Gate Pass Details - REQ-{detailRow?.gate_pass_id}</Modal.Title>
+          <Modal.Title>
+            Gate Pass Details - REQ-{detailRow?.gate_pass_id}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {detailRow && (
@@ -212,25 +221,51 @@ const GatepassDelivery = () => {
               <div className="row mb-4">
                 <div className="col-md-4">
                   <h6>Basic Information</h6>
-                  <p><strong>Request Type:</strong> {detailRow.request_type}</p>
-                  <p><strong>Status:</strong> {detailRow.status}</p>
-                  <p><strong>Date:</strong> {detailRow.request_date}</p>
-                  <p><strong>Time:</strong> {detailRow.request_time}</p>
+                  <p>
+                    <strong>Request Type:</strong> {detailRow.request_type}
+                  </p>
+                  <p>
+                    <strong>Status:</strong> {detailRow.status}
+                  </p>
+                  <p>
+                    <strong>Date:</strong> {detailRow.request_date}
+                  </p>
+                  <p>
+                    <strong>Time:</strong> {detailRow.request_time}
+                  </p>
                 </div>
                 <div className="col-md-4">
                   <h6>Requester Details</h6>
-                  <p><strong>Name:</strong> {detailRow.requester_name}</p>
-                  <p><strong>Email:</strong> {detailRow.requester_email}</p>
-                  <p><strong>Role:</strong> {detailRow.requester_role}</p>
-                  <p><strong>Phone:</strong> {detailRow.requester_phone}</p>
-                  <p><strong>Location:</strong> {detailRow.requester_location}</p>
+                  <p>
+                    <strong>Name:</strong> {detailRow.requester_name}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {detailRow.requester_email}
+                  </p>
+                  <p>
+                    <strong>Role:</strong> {detailRow.requester_role}
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> {detailRow.requester_phone}
+                  </p>
+                  <p>
+                    <strong>Location:</strong> {detailRow.requester_location}
+                  </p>
                 </div>
                 <div className="col-md-4">
                   <h6>Location Details</h6>
-                  <p><strong>From Location:</strong> {detailRow.from_location || detailRow.location}</p>
-                  <p><strong>Destination:</strong> {detailRow.destination_address}</p>
+                  <p>
+                    <strong>From Location:</strong>{" "}
+                    {detailRow.from_location || detailRow.location}
+                  </p>
+                  <p>
+                    <strong>Destination:</strong>{" "}
+                    {detailRow.destination_address}
+                  </p>
                   {detailRow.receiver_name && (
-                    <p><strong>Receiver Name:</strong> {detailRow.receiver_name}</p>
+                    <p>
+                      <strong>Receiver Name:</strong> {detailRow.receiver_name}
+                    </p>
                   )}
                 </div>
               </div>
@@ -238,20 +273,33 @@ const GatepassDelivery = () => {
               <div className="row mb-4">
                 <div className="col-md-6">
                   <h6>Purpose & Notes</h6>
-                  <p><strong>Purpose:</strong></p>
+                  <p>
+                    <strong>Purpose:</strong>
+                  </p>
                   <p className="mb-3">{detailRow.purpose}</p>
                   {detailRow.additional_notes && (
                     <>
-                      <p><strong>Additional Notes:</strong></p>
+                      <p>
+                        <strong>Additional Notes:</strong>
+                      </p>
                       <p>{detailRow.additional_notes}</p>
                     </>
                   )}
                 </div>
                 <div className="col-md-6">
                   <h6>Transport Details</h6>
-                  <p><strong>Transport Mode:</strong> {detailRow.transport_mode || 'N/A'}</p>
-                  <p><strong>Vehicle Number:</strong> {detailRow.vehicle_number || detailRow.vehicle_no || 'N/A'}</p>
-                  <p><strong>Driver Name:</strong> {detailRow.driver_name || 'N/A'}</p>
+                  <p>
+                    <strong>Transport Mode:</strong>{" "}
+                    {detailRow.transport_mode || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Vehicle Number:</strong>{" "}
+                    {detailRow.vehicle_number || detailRow.vehicle_no || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Driver Name:</strong>{" "}
+                    {detailRow.driver_name || "N/A"}
+                  </p>
                 </div>
               </div>
 
@@ -270,31 +318,66 @@ const GatepassDelivery = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {detailRow.materials && typeof detailRow.materials === 'string' ? (
-                        JSON.parse(detailRow.materials).map((material, index) => (
-                          <tr key={index}>
-                            <td>{material.description}</td>
-                            <td>{material.serialNumber || material.serial_number || 'N/A'}</td>
-                            <td>{material.quantity || material.qty}</td>
-                            <td>{material.uom}</td>
-                            <td>{material.isReturnable ? 'Yes' : material.returnable ? 'Yes' : 'No'}</td>
-                            <td>{material.returnDate || material.return_date || 'N/A'}</td>
-                          </tr>
-                        ))
+                      {detailRow.materials &&
+                      typeof detailRow.materials === "string" ? (
+                        JSON.parse(detailRow.materials).map(
+                          (material, index) => (
+                            <tr key={index}>
+                              <td>{material.description}</td>
+                              <td>
+                                {material.serialNumber ||
+                                  material.serial_number ||
+                                  "N/A"}
+                              </td>
+                              <td>{material.quantity || material.qty}</td>
+                              <td>{material.uom}</td>
+                              <td>
+                                {material.isReturnable
+                                  ? "Yes"
+                                  : material.returnable
+                                  ? "Yes"
+                                  : "No"}
+                              </td>
+                              <td>
+                                {material.returnDate ||
+                                  material.return_date ||
+                                  "N/A"}
+                              </td>
+                            </tr>
+                          )
+                        )
                       ) : detailRow.materials ? (
                         detailRow.materials.map((material, index) => (
                           <tr key={index}>
-                            <td>{material.description || material.item_name}</td>
-                            <td>{material.serialNumber || material.serial_number || 'N/A'}</td>
+                            <td>
+                              {material.description || material.item_name}
+                            </td>
+                            <td>
+                              {material.serialNumber ||
+                                material.serial_number ||
+                                "N/A"}
+                            </td>
                             <td>{material.quantity || material.qty}</td>
                             <td>{material.uom}</td>
-                            <td>{material.isReturnable ? 'Yes' : material.returnable ? 'Yes' : 'No'}</td>
-                            <td>{material.returnDate || material.return_date || 'N/A'}</td>
+                            <td>
+                              {material.isReturnable
+                                ? "Yes"
+                                : material.returnable
+                                ? "Yes"
+                                : "No"}
+                            </td>
+                            <td>
+                              {material.returnDate ||
+                                material.return_date ||
+                                "N/A"}
+                            </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="6" className="text-center">No materials listed</td>
+                          <td colSpan="6" className="text-center">
+                            No materials listed
+                          </td>
                         </tr>
                       )}
                     </tbody>
@@ -305,7 +388,7 @@ const GatepassDelivery = () => {
               <div className="row">
                 <div className="col-12">
                   <h6>Remarks</h6>
-                  <p>{detailRow.remarks || 'No remarks provided'}</p>
+                  <p>{detailRow.remarks || "No remarks provided"}</p>
                 </div>
               </div>
             </div>
@@ -334,8 +417,11 @@ const GatepassDelivery = () => {
             variant="success"
             onClick={async () => {
               try {
-                await acceptDelivery(acceptId);
-                const res = await fetchDeliveries();
+                await acceptDelivery(acceptId, user.id); 
+                const res = await fetchDeliveries(
+                  user.location,
+                  user.department
+                );
                 setPasses(res.data);
                 setAcceptId(null);
               } catch (error) {
@@ -369,7 +455,23 @@ const GatepassDelivery = () => {
           <Button variant="secondary" onClick={() => setRejectId(null)}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleReject}>
+          <Button
+            variant="danger"
+            onClick={async () => {
+              try {
+                await rejectDelivery(rejectId, comment, user.id); 
+                const res = await fetchDeliveries(
+                  user.location,
+                  user.department
+                );
+                setPasses(res.data);
+                setRejectId(null);
+                setComment("");
+              } catch (error) {
+                console.error("Reject failed:", error);
+              }
+            }}
+          >
             Submit Issue
           </Button>
         </Modal.Footer>
