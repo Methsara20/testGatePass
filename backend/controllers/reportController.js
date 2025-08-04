@@ -365,11 +365,17 @@ exports.exportApprovedVsRejected = (req, res) => {
 exports.getMaterialMovement = (req, res) => {
     const { whereClause, values } = buildFilters(req.query);
     const query = `
-        SELECT gm.description AS material_name, gm.qty,
-               gpr.created_by AS issuer, gpr.receiver_name AS receiver,
-               gpr.created_at AS out_date, gm.return_date AS in_date
+        SELECT 
+            gpr.gate_pass_id,
+            u.full_name AS requester_name,
+            gm.description AS material_name,
+            gm.qty,
+            gpr.receiver_name AS receiver,
+            gpr.created_at AS out_date,
+            gm.return_date AS in_date
         FROM gate_pass_materials gm
         JOIN gate_pass_requests gpr ON gm.gate_pass_id = gpr.gate_pass_id
+        LEFT JOIN users u ON gpr.created_by = u.id
         ${whereClause}
         ORDER BY gpr.created_at DESC;
     `;
@@ -379,29 +385,38 @@ exports.getMaterialMovement = (req, res) => {
     });
 };
 
+
 exports.exportMaterialMovement = (req, res) => {
     const { whereClause, values } = buildFilters(req.query);
     const query = `
-        SELECT gm.description AS material_name, gm.qty,
-               gpr.created_by AS issuer, gpr.receiver_name AS receiver,
-               gpr.created_at AS out_date, gm.return_date AS in_date
+        SELECT 
+            gpr.gate_pass_id,
+            u.full_name AS requester_name,
+            gm.description AS material_name,
+            gm.qty,
+            gpr.receiver_name AS receiver,
+            gpr.created_at AS out_date,
+            gm.return_date AS in_date
         FROM gate_pass_materials gm
         JOIN gate_pass_requests gpr ON gm.gate_pass_id = gpr.gate_pass_id
+        LEFT JOIN users u ON gpr.created_by = u.id
         ${whereClause}
         ORDER BY gpr.created_at DESC;
     `;
     db.query(query, values, async (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         await exportToExcel(res, 'Material_Movement', [
+            { header: 'Gate Pass ID', key: 'gate_pass_id' },   
+            { header: 'Requester', key: 'requester_name' },    
             { header: 'Material Name', key: 'material_name' },
             { header: 'Quantity', key: 'qty' },
-            { header: 'Issuer', key: 'issuer' },
             { header: 'Receiver', key: 'receiver' },
             { header: 'Out Date', key: 'out_date' },
             { header: 'In Date', key: 'in_date' }
         ], results);
     });
 };
+
 
 
 

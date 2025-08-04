@@ -10,7 +10,10 @@ const MaterialMovementReport = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [gatePassFilter, setGatePassFilter] = useState('');
+  const [requesterFilter, setRequesterFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
 
   const fetchReport = async () => {
@@ -41,20 +44,38 @@ const MaterialMovementReport = () => {
     }
   };
 
-  const handleSearch = (e) => {
-    const term = e.target.value.toLowerCase();
-    setSearchTerm(term);
-    setFilteredData(
-      reportData.filter(
-        (row) =>
-          row.material_name.toLowerCase().includes(term) ||
-          row.issuer.toLowerCase().includes(term) ||
-          row.receiver.toLowerCase().includes(term)
-      )
-    );
+  const applyFilters = () => {
+    let filtered = reportData;
+
+    // Gate Pass Filter
+    if (gatePassFilter.trim()) {
+      filtered = filtered.filter((row) =>
+        row.gate_pass_id.toString().includes(gatePassFilter.trim())
+      );
+    }
+
+    // Requester Filter
+    if (requesterFilter.trim()) {
+      filtered = filtered.filter((row) =>
+        row.requester_name?.toLowerCase().includes(requesterFilter.trim().toLowerCase())
+      );
+    }
+
+    // Date Range Filter
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      filtered = filtered.filter((row) => {
+        const outDate = new Date(row.out_date);
+        return outDate >= start && outDate <= end;
+      });
+    }
+
+    setFilteredData(filtered);
   };
 
   useEffect(() => { fetchReport(); }, []);
+  useEffect(() => { applyFilters(); }, [gatePassFilter, requesterFilter, startDate, endDate]);
 
   return (
     <div className="d-flex">
@@ -78,19 +99,41 @@ const MaterialMovementReport = () => {
           </div>
         </div>
 
-        {/* Filters & Search */}
+        {/* Filters Section */}
         <Card className="mb-4 shadow-sm">
           <Card.Body>
             <Row className="g-3">
-              <Col md={6}>
+              <Col md={3}>
                 <Form.Control
                   type="text"
-                  placeholder="🔍 Search by material, issuer, or receiver..."
-                  value={searchTerm}
-                  onChange={handleSearch}
+                  placeholder="Filter by Gate Pass No"
+                  value={gatePassFilter}
+                  onChange={(e) => setGatePassFilter(e.target.value)}
                 />
               </Col>
-              <Col md={6} className="text-end">
+              <Col md={3}>
+                <Form.Control
+                  type="text"
+                  placeholder="Filter by Requester Name"
+                  value={requesterFilter}
+                  onChange={(e) => setRequesterFilter(e.target.value)}
+                />
+              </Col>
+              <Col md={2}>
+                <Form.Control
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </Col>
+              <Col md={2}>
+                <Form.Control
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </Col>
+              <Col md={2} className="text-end">
                 <small className="text-muted">
                   Showing <strong>{filteredData.length}</strong> of <strong>{reportData.length}</strong> records
                 </small>
@@ -113,9 +156,10 @@ const MaterialMovementReport = () => {
               <Table hover bordered className="mb-0 align-middle">
                 <thead className="table-dark">
                   <tr>
+                    <th>Gate Pass ID</th>
+                    <th>Requester</th>
                     <th>Material</th>
                     <th>Quantity</th>
-                    <th>Requester</th>
                     <th>Receiver</th>
                     <th>Out Date</th>
                     <th>In Date</th>
@@ -124,18 +168,17 @@ const MaterialMovementReport = () => {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="6" className="text-center py-4">
+                      <td colSpan="7" className="text-center py-4">
                         <Spinner animation="border" className="me-2" /> Loading data...
                       </td>
                     </tr>
                   ) : filteredData.length > 0 ? (
                     filteredData.map((row, idx) => (
                       <tr key={idx}>
+                        <td className="fw-bold text-primary">REQ-{row.gate_pass_id}</td>
+                        <td>{row.requester_name}</td>
                         <td className="fw-semibold">{row.material_name}</td>
-                        <td>
-                          <Badge bg="secondary">{row.qty}</Badge>
-                        </td>
-                        <td>{row.issuer}</td>
+                        <td><Badge bg="secondary">{row.qty}</Badge></td>
                         <td>{row.receiver}</td>
                         <td>{new Date(row.out_date).toLocaleDateString()}</td>
                         <td>{row.in_date ? new Date(row.in_date).toLocaleDateString() : <span className="text-muted">Not Returned</span>}</td>
@@ -143,10 +186,10 @@ const MaterialMovementReport = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="text-center py-4 text-muted">
+                      <td colSpan="7" className="text-center py-4 text-muted">
                         <BiSearch size={40} className="mb-2 opacity-50" />
                         <p className="mb-0">No records found</p>
-                        <small>Try adjusting your search or filters</small>
+                        <small>Try adjusting your filters</small>
                       </td>
                     </tr>
                   )}
