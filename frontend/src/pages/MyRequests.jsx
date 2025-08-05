@@ -17,6 +17,7 @@ const MyRequests = () => {
     Pending: [],
     Approved: [],
     Rejected: [],
+    Cancelled: [],
   });
   const [detailRow, setDetailRow] = useState(null);
   const [editRow, setEditRow] = useState(null);
@@ -377,7 +378,7 @@ const MyRequests = () => {
 
         {/* Tabs */}
         <ul className="nav nav-tabs mb-3">
-          {["Pending", "Approved", "Rejected"].map((t) => (
+          {["Pending", "Approved", "Rejected", "Cancelled"].map((t) => (
             <li className="nav-item" key={t}>
               <button
                 className={`nav-link ${tab === t ? "active" : ""}`}

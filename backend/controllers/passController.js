@@ -334,6 +334,7 @@ exports.getMyRequests = (req, res) => {
       Pending: rows.filter(r => r.status === 'Pending'),
       Approved: rows.filter(r => r.status === 'Approved'),
       Rejected: rows.filter(r => r.status === 'Rejected'),
+      Cancelled: rows.filter(r => r.status === 'Cancelled'),
     });
   });
 };

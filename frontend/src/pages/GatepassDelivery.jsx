@@ -163,39 +163,6 @@ const GatepassDelivery = () => {
       <div className="p-4 flex-grow-1 w-100">
         <h4 className="mb-3">Gate-Pass Delivery</h4>
 
-        {/* Tabs with badge counts */}
-        <Tabs
-          activeKey={activeTab}
-          onSelect={(tab) => setActiveTab(tab)}
-          className="mb-3"
-          justify
-        >
-          <Tab
-            eventKey="Pending"
-            title={
-              <>
-                Pending <Badge bg="warning">{counts.Pending}</Badge>
-              </>
-            }
-          />
-          <Tab
-            eventKey="Accepted"
-            title={
-              <>
-                Accepted <Badge bg="success">{counts.Accepted}</Badge>
-              </>
-            }
-          />
-          <Tab
-            eventKey="Rejected"
-            title={
-              <>
-                Rejected <Badge bg="danger">{counts.Rejected}</Badge>
-              </>
-            }
-          />
-        </Tabs>
-
         {/* Search Box */}
         <div className="mb-3">
           <InputGroup>
@@ -220,6 +187,29 @@ const GatepassDelivery = () => {
             )}
           </InputGroup>
         </div>
+
+        {/* Tabs with badge counts */}
+        <ul className="nav nav-tabs mb-3">
+          {[
+            { key: "Pending", count: counts.Pending },
+            { key: "Accepted", count: counts.Accepted },
+            { key: "Rejected", count: counts.Rejected },
+          ].map((tabItem) => (
+            <li className="nav-item" key={tabItem.key}>
+              <button
+                className={`nav-link ${
+                  activeTab === tabItem.key ? "active" : ""
+                }`}
+                onClick={() => setActiveTab(tabItem.key)}
+              >
+                {tabItem.key}
+                <span className="badge bg-light text-dark ms-1">
+                  {tabItem.count ?? 0}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
 
         {/* Table or Loading Spinner */}
         {loading ? (
@@ -299,7 +289,9 @@ const GatepassDelivery = () => {
         size="xl"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Gate Pass Details - REQ-{detailRow?.gate_pass_id}</Modal.Title>
+          <Modal.Title>
+            Gate Pass Details - REQ-{detailRow?.gate_pass_id}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {detailRow && (
@@ -308,7 +300,8 @@ const GatepassDelivery = () => {
                 <div className="col-md-4">
                   <h6>Basic Information</h6>
                   <p>
-                    <strong>Request Type:</strong> {detailRow.request_type || "N/A"}
+                    <strong>Request Type:</strong>{" "}
+                    {detailRow.request_type || "N/A"}
                   </p>
                   <p>
                     <strong>Status:</strong> {detailRow.status || "N/A"}
@@ -345,7 +338,8 @@ const GatepassDelivery = () => {
                     {detailRow.from_location || detailRow.location || "N/A"}
                   </p>
                   <p>
-                    <strong>Destination:</strong> {detailRow.destination_address || "N/A"}
+                    <strong>Destination:</strong>{" "}
+                    {detailRow.destination_address || "N/A"}
                   </p>
                   {detailRow.receiver_name && (
                     <p>
@@ -382,7 +376,8 @@ const GatepassDelivery = () => {
                     {detailRow.vehicle_number || detailRow.vehicle_no || "N/A"}
                   </p>
                   <p>
-                    <strong>Driver Name:</strong> {detailRow.driver_name || "N/A"}
+                    <strong>Driver Name:</strong>{" "}
+                    {detailRow.driver_name || "N/A"}
                   </p>
                 </div>
               </div>
@@ -404,30 +399,36 @@ const GatepassDelivery = () => {
                     <tbody>
                       {detailRow.materials &&
                       typeof detailRow.materials === "string" ? (
-                        JSON.parse(detailRow.materials).map((material, index) => (
-                          <tr key={index}>
-                            <td>{material.description}</td>
-                            <td>
-                              {material.serialNumber ||
-                                material.serial_number ||
-                                "N/A"}
-                            </td>
-                            <td>{material.quantity || material.qty}</td>
-                            <td>{material.uom || "N/A"}</td>
-                            <td>
-                              {material.isReturnable || material.returnable
-                                ? "Yes"
-                                : "No"}
-                            </td>
-                            <td>
-                              {material.returnDate || material.return_date || "N/A"}
-                            </td>
-                          </tr>
-                        ))
+                        JSON.parse(detailRow.materials).map(
+                          (material, index) => (
+                            <tr key={index}>
+                              <td>{material.description}</td>
+                              <td>
+                                {material.serialNumber ||
+                                  material.serial_number ||
+                                  "N/A"}
+                              </td>
+                              <td>{material.quantity || material.qty}</td>
+                              <td>{material.uom || "N/A"}</td>
+                              <td>
+                                {material.isReturnable || material.returnable
+                                  ? "Yes"
+                                  : "No"}
+                              </td>
+                              <td>
+                                {material.returnDate ||
+                                  material.return_date ||
+                                  "N/A"}
+                              </td>
+                            </tr>
+                          )
+                        )
                       ) : detailRow.materials ? (
                         detailRow.materials.map((material, index) => (
                           <tr key={index}>
-                            <td>{material.description || material.item_name}</td>
+                            <td>
+                              {material.description || material.item_name}
+                            </td>
                             <td>
                               {material.serialNumber ||
                                 material.serial_number ||
@@ -441,7 +442,9 @@ const GatepassDelivery = () => {
                                 : "No"}
                             </td>
                             <td>
-                              {material.returnDate || material.return_date || "N/A"}
+                              {material.returnDate ||
+                                material.return_date ||
+                                "N/A"}
                             </td>
                           </tr>
                         ))
