@@ -161,7 +161,7 @@ const GatepassDelivery = () => {
     <div className="d-flex">
       <Sidebar />
       <div className="p-4 flex-grow-1 w-100">
-        <h4 className="mb-3">Gate-Pass Delivery</h4>
+        <h4 className="mb-3">Gate Pass Delivery</h4>
 
         {/* Search Box */}
         <div className="mb-3">

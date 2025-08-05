@@ -351,7 +351,7 @@ const MyRequests = () => {
     <div className="d-flex">
       <Sidebar />
       <div className="p-4 flex-grow-1 w-100">
-        <h4 className="mb-3">My Gate-Pass Requests</h4>
+        <h4 className="mb-3">My Gate Pass Requests</h4>
 
         {/* Improved Search Input */}
         <div className="mb-3">

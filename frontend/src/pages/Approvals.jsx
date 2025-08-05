@@ -208,7 +208,7 @@ const Approvals = () => {
       <div className="p-4 flex-grow-1 w-100">
         <h4 className="mb-1">Approvals</h4>
         <p className="text-muted">
-          Review and manage pending gate-pass approvals.
+          Review and manage pending gate pass approvals.
         </p>
 
         {/* Improved Search Input */}

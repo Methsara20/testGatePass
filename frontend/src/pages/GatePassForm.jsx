@@ -308,9 +308,9 @@ const GatePassForm = () => {
                   onChange={(e) => handleChange('request_type', e.target.value)}
                   required
                 >
-                  <option value="Outward">Outward</option>
-                  <option value="Returnable">Returnable</option>
                   <option value="Non-returnable">Non-returnable</option>
+                  <option value="Returnable">Returnable</option>
+                  
                 </Form.Control>
               </Form.Group>
             </Col>

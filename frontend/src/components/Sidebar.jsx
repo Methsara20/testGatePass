@@ -87,7 +87,7 @@ const Sidebar = () => {
             style={{ fontSize: "0.9rem", minHeight: "32px" }}
           >
             <i className="bi bi-pencil-square" style={{ fontSize: "1rem" }}></i>
-            {!isCollapsed && <span className="ms-2">New Gate-Pass</span>}
+            {!isCollapsed && <span className="ms-2">New Gate Pass</span>}
           </Link>
         </li>
 
@@ -126,7 +126,7 @@ const Sidebar = () => {
               title="cancel approval"
               style={{ fontSize: "0.9rem", minHeight: "32px" }}
             >
-              <i className="bi bi-check2-square" style={{ fontSize: "1rem" }}></i>
+              <i className="bi bi-x-square" style={{ fontSize: "1rem" }}></i>
               {!isCollapsed && <span className="ms-2">Cancel Approval</span>}
             </Link>
           </li>

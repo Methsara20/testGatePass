@@ -152,6 +152,7 @@ const GatePassSummaryReport = () => {
                   <option value="Pending">Pending</option>
                   <option value="Approved">Approved</option>
                   <option value="Rejected">Rejected</option>
+                  <option value="Cancelled">Cancelled</option>
                 </Form.Select>
               </Col>
               <Col md={3} className="d-flex align-items-end">

@@ -1,42 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/authService';
-import { getLocations } from '../services/locationService'; // Import location service
+import { getLocations } from '../services/locationService';
 import { useAuth } from '../context/AuthContext';
 import { validateRequired } from '../utils/validators';
 import PasswordResetHelp from "../components/PasswordResetHelp";
+import companyLogo from '../assets/LOGO.png';
+import { FiUser, FiLock, FiMapPin, FiLoader, FiAlertCircle } from 'react-icons/fi';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [location, setLocation] = useState('');
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    location: ''
+  });
   const [locations, setLocations] = useState([]); 
   const [error, setError] = useState('');
   const [showHelp, setShowHelp] = useState(false);
-  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
   const { setUser } = useAuth();
 
-
   useEffect(() => {
     const fetchLocations = async () => {
-      setLoadingLocations(true);
       try {
         const locationsData = await getLocations();
         if (Array.isArray(locationsData)) {
-          
           const sortedLocations = [...locationsData].sort((a, b) => 
             a.location_id - b.location_id
           );
           setLocations(sortedLocations);
         } else {
           console.error('Unexpected locations format:', locationsData);
-          setLocations([]);
         }
       } catch (err) {
         console.error('Failed to load locations:', err);
-        setLocations([]);
+        setError('Failed to load locations. Please refresh the page.');
       } finally {
         setLoadingLocations(false);
       }
@@ -45,16 +46,28 @@ const Login = () => {
     fetchLocations();
   }, []);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
-    if (!validateRequired(location) || !validateRequired(username) || !validateRequired(password)) {
+    if (!validateRequired(formData.location) || 
+        !validateRequired(formData.username) || 
+        !validateRequired(formData.password)) {
+      setIsSubmitting(false);
       return setError('Please fill all fields correctly.');
     }
 
     try {
-      const response = await login(username, password, location);
+      const response = await login(formData.username, formData.password, formData.location);
       const user = response.data;
 
       localStorage.setItem('users', JSON.stringify(user));
@@ -73,21 +86,54 @@ const Login = () => {
           navigate('/dashboard');
       }
     } catch (err) {
-      setError('Invalid credentials or server error.');
+      setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="container d-flex align-items-center justify-content-center vh-100">
-      <div className="card p-4 shadow" style={{ width: '100%', maxWidth: '400px' }}>
-        <h3 className="text-center mb-3">Sign In</h3>
+    <div className="container d-flex flex-column align-items-center justify-content-center min-vh-100 p-3">
+      {/* Company Logo & Header */}
+      <div className="text-center mb-4">
+        <img
+          src={companyLogo}
+          alt="Company Logo"
+          className="mb-3 img-fluid" 
+          style={{
+            width: "250px", 
+            height: "auto",
+            maxHeight: "150px", 
+            filter: "brightness(1.1) contrast(1.1)",
+            mixBlendMode: "multiply",
+            objectFit: "contain", // Ensures proper scaling
+          }}
+        />
+        <h1 className="h5 text-black">Material Gate Pass System</h1>
+      </div>
+
+      {/* Login Card */}
+      <div
+        className="card p-4 shadow-sm border-0 rounded-lg"
+        style={{ width: "100%", maxWidth: "400px" }}
+      >
+        <h2 className="h5 text-center mb-4">Welcome Back</h2>
+
         <form onSubmit={handleSubmit}>
+          {/* Location Field */}
           <div className="mb-3">
-            <label className="form-label">Location</label>
+            <label
+              htmlFor="location"
+              className="form-label d-flex align-items-center"
+            >
+              <FiMapPin className="me-2" /> Location
+            </label>
             <select
-              className="form-select"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              id="location"
+              className="form-select ps-4"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
               disabled={loadingLocations}
               required
             >
@@ -99,53 +145,99 @@ const Login = () => {
               ))}
             </select>
             {loadingLocations && (
-              <small className="text-muted">Loading locations...</small>
+              <small className="text-muted d-flex align-items-center mt-1">
+                <FiLoader className="me-1 spin" /> Loading locations...
+              </small>
             )}
-            {!loadingLocations && locations.length === 0 && (
-              <small className="text-danger">No locations available</small>
-            )}
           </div>
+
+          {/* Username Field */}
           <div className="mb-3">
-            <label className="form-label">User Name / EMP No</label>
-            <input
-              type="text"
-              className="form-control"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="employee number"
-              required
-            />
+            <label
+              htmlFor="username"
+              className="form-label d-flex align-items-center"
+            >
+              <FiUser className="me-2" /> Username / Employee ID
+            </label>
+            <div className="position-relative">
+              <input
+                id="username"
+                type="text"
+                className="form-control ps-4"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="Enter your username or employee number"
+                required
+                autoComplete="username"
+              />
+            </div>
           </div>
-          <div className="mb-3">
-            <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-control"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-            />
+
+          {/* Password Field */}
+          <div className="mb-4">
+            <label
+              htmlFor="password"
+              className="form-label d-flex align-items-center"
+            >
+              <FiLock className="me-2" /> Password
+            </label>
+            <div className="position-relative">
+              <input
+                id="password"
+                type="password"
+                className="form-control ps-4"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                required
+                autoComplete="current-password"
+              />
+            </div>
           </div>
-          {error && <div className="alert alert-danger py-1">{error}</div>}
-          <div className="d-grid">
-            <button type="submit" className="btn btn-primary">
-              Sign In
+
+          {/* Error Message */}
+          {error && (
+            <div className="alert alert-danger d-flex align-items-center py-2 mb-3">
+              <FiAlertCircle className="me-2" />
+              <small>{error}</small>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="d-grid mb-3">
+            <button
+              type="submit"
+              className="btn btn-primary py-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <FiLoader className="spin me-2" />
+                  Signing In...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </button>
           </div>
         </form>
-        <div className="text-end mt-2">
+
+        {/* Password Reset Link */}
+        <div className="text-center mt-3">
           <button
             type="button"
-            className="btn btn-link p-0 small"
+            className="btn btn-link text-decoration-none p-0 small"
             onClick={() => setShowHelp(true)}
           >
-            Password Reset
+            Forgot your password?
           </button>
         </div>
-
-        <PasswordResetHelp show={showHelp} onHide={() => setShowHelp(false)} />
       </div>
+
+      {/* Password Reset Modal */}
+      <PasswordResetHelp show={showHelp} onHide={() => setShowHelp(false)} />
     </div>
   );
 };
