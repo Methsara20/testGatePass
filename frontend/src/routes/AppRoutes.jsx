@@ -10,7 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import Approvals from '../pages/Approvals';
 import MyRequests from '../pages/MyRequests';
 import GatepassDelivery from '../pages/GatepassDelivery';
-
+//Cancel Approval
+import CancelApproval from '../pages/CancelApproval';
 //reports
 import GatePassSummaryReport from '../reports/GatePassSummaryReport';
 import OverdueMaterialsReport from '../reports/OverdueMaterialsReport';
@@ -60,6 +61,10 @@ const AppRoutes = () => {
         <Route path="/reports/material-movement" element={<ProtectedRoute allowedRoles={['Admin', 'HOD']}><MaterialMovementReport /></ProtectedRoute>}/>
         <Route path="/reports/acceptance-report" element={<ProtectedRoute allowedRoles={['Admin', 'HOD']}><AcceptanceReport /></ProtectedRoute> }/>
 
+        {/* Approval canceled  */}
+        <Route path="/cancel-approval" element={<ProtectedRoute><CancelApproval /></ProtectedRoute>} />
+
+        
 
         <Route path="/unauthorized" element={<h3 className="text-center mt-5">Unauthorized Access</h3>} />
         <Route path="*" element={<Navigate to="/login" />} />

@@ -10,7 +10,7 @@ const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [location, setLocation] = useState('');
-  const [locations, setLocations] = useState([]); // State for locations
+  const [locations, setLocations] = useState([]); 
   const [error, setError] = useState('');
   const [showHelp, setShowHelp] = useState(false);
   const [loadingLocations, setLoadingLocations] = useState(false);
@@ -18,28 +18,6 @@ const Login = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
 
-  // Fetch locations on component mount
-  // useEffect(() => {
-  //   const fetchLocations = async () => {
-  //     setLoadingLocations(true);
-  //     try {
-  //       const locationsData = await getLocations();
-  //       if (Array.isArray(locationsData)) {
-  //         setLocations(locationsData);
-  //       } else {
-  //         console.error('Unexpected locations format:', locationsData);
-  //         setLocations([]);
-  //       }
-  //     } catch (err) {
-  //       console.error('Failed to load locations:', err);
-  //       setLocations([]);
-  //     } finally {
-  //       setLoadingLocations(false);
-  //     }
-  //   };
-
-  //   fetchLocations();
-  // }, []);
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -47,7 +25,7 @@ const Login = () => {
       try {
         const locationsData = await getLocations();
         if (Array.isArray(locationsData)) {
-          // Sort locations by location_id in ascending order
+          
           const sortedLocations = [...locationsData].sort((a, b) => 
             a.location_id - b.location_id
           );

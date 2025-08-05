@@ -7,7 +7,17 @@ import {
 } from "../services/deliveryService";
 import { fetchGatePassWithMaterials } from "../services/approvalService";
 import { useAuth } from "../context/AuthContext";
-import { Modal, Button, Form, InputGroup, Table } from "react-bootstrap";
+import {
+  Modal,
+  Button,
+  Form,
+  InputGroup,
+  Table,
+  Tabs,
+  Tab,
+  Spinner,
+  Badge,
+} from "react-bootstrap";
 import { BiSearch, BiDetail } from "react-icons/bi";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -20,37 +30,67 @@ const GatepassDelivery = () => {
   const [acceptId, setAcceptId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [detailRow, setDetailRow] = useState(null);
+  const [activeTab, setActiveTab] = useState("Pending");
+  const [loading, setLoading] = useState(false);
+  const [counts, setCounts] = useState({ Pending: 0, Accepted: 0, Rejected: 0 });
 
+  // Mapping tab names to backend status values
+  const statusMap = {
+    Pending: "Waiting",
+    Accepted: "Accepted",
+    Rejected: "Rejected",
+  };
 
-  // useEffect(() => {
-  //   let isMounted = true;
-  //   if (user?.location) { 
-  //     fetchDeliveries(user.location).then((res) => {
-  //       if (isMounted) {
-  //         setPasses(res.data);
-  //         setFilteredPasses(res.data);
-  //       }
-  //     });
-  //   }
-  //   return () => { isMounted = false; };
-  // }, [user?.location]);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (user?.location && user?.department) {
-      fetchDeliveries(user.location, user.department).then((res) => {
-        if (isMounted) {
-          setPasses(res.data);
-          setFilteredPasses(res.data);
-        }
-      }).catch(err => console.error("Fetch Deliveries Error:", err));
+  // Fetch passes based on active tab
+  const fetchData = async (tab) => {
+    if (!user?.location || !user?.department) return;
+    setLoading(true);
+    try {
+      const res = await fetchDeliveries(
+        user.location,
+        user.department,
+        statusMap[tab]
+      );
+      setPasses(res.data);
+      setFilteredPasses(res.data);
+    } catch (err) {
+      console.error("Fetch Deliveries Error:", err);
+    } finally {
+      setLoading(false);
     }
-    return () => { isMounted = false; };
-  }, [user?.location, user?.department]);
-  
+  };
 
+  // Fetch counts for badges
+  const fetchCounts = async () => {
+    if (!user?.location || !user?.department) return;
+    const newCounts = {};
+    for (const tab of ["Pending", "Accepted", "Rejected"]) {
+      try {
+        const res = await fetchDeliveries(
+          user.location,
+          user.department,
+          statusMap[tab]
+        );
+        newCounts[tab] = res.data.length;
+      } catch (err) {
+        console.error(`Error fetching count for ${tab}`, err);
+        newCounts[tab] = 0;
+      }
+    }
+    setCounts(newCounts);
+  };
+
+  // On mount & when activeTab changes, fetch passes & counts
   useEffect(() => {
-    if (searchTerm === "") {
+    if (user?.location && user?.department) {
+      fetchCounts();
+      fetchData(activeTab);
+    }
+  }, [user?.location, user?.department, activeTab]);
+
+  // Filter passes locally based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
       setFilteredPasses(passes);
     } else {
       const filtered = passes.filter(
@@ -65,57 +105,57 @@ const GatepassDelivery = () => {
     }
   }, [searchTerm, passes]);
 
+  // Fetch detailed data for a gate pass on clicking details button
   const handleViewDetails = async (id) => {
     try {
       const res = await fetchGatePassWithMaterials(id);
       const data = res.data;
-      
-      
+
       const requesterDetails = {
-        requester_name: data.requester_name || 'N/A',
-        requester_email: data.requester_email || 'N/A',
-        requester_role:  data.requester_role || 'N/A',
-        requester_phone:  data.requester_phone || 'N/A',
-        requester_location:  data.requester_location || 'N/A'
+        requester_name: data.requester_name || "N/A",
+        requester_email: data.requester_email || "N/A",
+        requester_role: data.requester_role || "N/A",
+        requester_phone: data.requester_phone || "N/A",
+        requester_location: data.requester_location || "N/A",
       };
-  
-      setDetailRow({
-        ...data,
-        ...requesterDetails
-      });
+
+      setDetailRow({ ...data, ...requesterDetails });
     } catch (error) {
       console.error("Error fetching gate pass details:", error);
       alert("Failed to load details. Please try again.");
     }
   };
 
+  // Accept a pass - only available in Pending tab
   const handleAccept = async (id) => {
-    if (!window.confirm("Confirm all items were received in good condition?")) {
+    if (!window.confirm("Confirm all items were received in good condition?"))
       return;
-    }
-  
     try {
-      await acceptDelivery(id, user.id);  
-      const res = await fetchDeliveries(user.location, user.department); 
-      setPasses(res.data);
+      await acceptDelivery(id, user.id);
+      await fetchData("Pending"); // reload pending passes
+      await fetchCounts(); // refresh badges
+      setAcceptId(null);
     } catch (error) {
       console.error("Accept failed:", error);
     }
   };
-  
 
+  // Reject a pass - only available in Pending tab
   const handleReject = async () => {
+    if (!comment.trim()) {
+      alert("Please enter a problem description.");
+      return;
+    }
     try {
-      await rejectDelivery(rejectId, comment, user.id);  
-      const res = await fetchDeliveries(user.location, user.department); 
-      setPasses(res.data);
+      await rejectDelivery(rejectId, comment, user.id);
+      await fetchData("Pending"); // reload pending passes
+      await fetchCounts(); // refresh badges
       setRejectId(null);
       setComment("");
     } catch (error) {
       console.error("Reject failed:", error);
     }
   };
-  
 
   return (
     <div className="d-flex">
@@ -123,6 +163,40 @@ const GatepassDelivery = () => {
       <div className="p-4 flex-grow-1 w-100">
         <h4 className="mb-3">Gate-Pass Delivery</h4>
 
+        {/* Tabs with badge counts */}
+        <Tabs
+          activeKey={activeTab}
+          onSelect={(tab) => setActiveTab(tab)}
+          className="mb-3"
+          justify
+        >
+          <Tab
+            eventKey="Pending"
+            title={
+              <>
+                Pending <Badge bg="warning">{counts.Pending}</Badge>
+              </>
+            }
+          />
+          <Tab
+            eventKey="Accepted"
+            title={
+              <>
+                Accepted <Badge bg="success">{counts.Accepted}</Badge>
+              </>
+            }
+          />
+          <Tab
+            eventKey="Rejected"
+            title={
+              <>
+                Rejected <Badge bg="danger">{counts.Rejected}</Badge>
+              </>
+            }
+          />
+        </Tabs>
+
+        {/* Search Box */}
         <div className="mb-3">
           <InputGroup>
             <InputGroup.Text>
@@ -133,11 +207,13 @@ const GatepassDelivery = () => {
               placeholder="Search by ID, description, or location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              disabled={loading}
             />
             {searchTerm && (
               <Button
                 variant="outline-secondary"
                 onClick={() => setSearchTerm("")}
+                disabled={loading}
               >
                 Clear
               </Button>
@@ -145,65 +221,77 @@ const GatepassDelivery = () => {
           </InputGroup>
         </div>
 
-        <div className="table-responsive">
-          <table className="table align-middle">
-            <thead className="table-light">
-              <tr>
-                <th>Gate Pass No</th>
-                <th>Date</th>
-                <th>From Location</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPasses.map((p) => (
-                <tr key={p.gate_pass_id}>
-                  <td className="fw-bold">{`REQ-${p.gate_pass_id}`}</td>
-
-                  <td>{p.request_date}</td>
-                  <td>{p.location}</td>
-                  <td>
-                    <Button
-                      variant="light"
-                      size="sm"
-                      onClick={() => handleViewDetails(p.gate_pass_id)}
-                      className="me-2"
-                    >
-                      <BiDetail />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="success"
-                      onClick={() => setAcceptId(p.gate_pass_id)}
-                      className="me-2"
-                    >
-                      <i className="bi bi-check-lg" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => setRejectId(p.gate_pass_id)}
-                    >
-                      <i className="bi bi-exclamation-octagon" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {filteredPasses.length === 0 && (
+        {/* Table or Loading Spinner */}
+        {loading ? (
+          <div className="text-center py-4">
+            <Spinner animation="border" role="status" />
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <Table className="align-middle" striped hover>
+              <thead className="table-light">
                 <tr>
-                  <td colSpan="6" className="text-center py-4">
-                    {passes.length === 0
-                      ? "No deliverable passes"
-                      : "No matching results found"}
-                  </td>
+                  <th>Gate Pass No</th>
+                  <th>Request Type</th>
+                  <th>Date</th>
+                  <th>From Location</th>
+                  <th>Actions</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredPasses.length > 0 ? (
+                  filteredPasses.map((p) => (
+                    <tr key={p.gate_pass_id}>
+                      <td className="fw-bold">{`REQ-${p.gate_pass_id}`}</td>
+                      <td>{p.request_type || "N/A"}</td>
+                      <td>{p.request_date || "N/A"}</td>
+                      <td>{p.location || "N/A"}</td>
+                      <td>
+                        <Button
+                          variant="light"
+                          size="sm"
+                          onClick={() => handleViewDetails(p.gate_pass_id)}
+                          className="me-2"
+                        >
+                          <BiDetail />
+                        </Button>
+                        {/* Only show accept/reject buttons on Pending tab */}
+                        {activeTab === "Pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="success"
+                              onClick={() => setAcceptId(p.gate_pass_id)}
+                              className="me-2"
+                            >
+                              <i className="bi bi-check-lg" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => setRejectId(p.gate_pass_id)}
+                            >
+                              <i className="bi bi-exclamation-octagon" />
+                            </Button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4">
+                      No records found for <strong>{activeTab}</strong>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </div>
+        )}
       </div>
 
-      {/* Enhanced Details Modal */}
+      {/* Details Modal */}
       <Modal
         show={!!detailRow}
         onHide={() => setDetailRow(null)}
@@ -211,9 +299,7 @@ const GatepassDelivery = () => {
         size="xl"
       >
         <Modal.Header closeButton>
-          <Modal.Title>
-            Gate Pass Details - REQ-{detailRow?.gate_pass_id}
-          </Modal.Title>
+          <Modal.Title>Gate Pass Details - REQ-{detailRow?.gate_pass_id}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {detailRow && (
@@ -222,16 +308,16 @@ const GatepassDelivery = () => {
                 <div className="col-md-4">
                   <h6>Basic Information</h6>
                   <p>
-                    <strong>Request Type:</strong> {detailRow.request_type}
+                    <strong>Request Type:</strong> {detailRow.request_type || "N/A"}
                   </p>
                   <p>
-                    <strong>Status:</strong> {detailRow.status}
+                    <strong>Status:</strong> {detailRow.status || "N/A"}
                   </p>
                   <p>
-                    <strong>Date:</strong> {detailRow.request_date}
+                    <strong>Date:</strong> {detailRow.request_date || "N/A"}
                   </p>
                   <p>
-                    <strong>Time:</strong> {detailRow.request_time}
+                    <strong>Time:</strong> {detailRow.request_time || "N/A"}
                   </p>
                 </div>
                 <div className="col-md-4">
@@ -256,11 +342,10 @@ const GatepassDelivery = () => {
                   <h6>Location Details</h6>
                   <p>
                     <strong>From Location:</strong>{" "}
-                    {detailRow.from_location || detailRow.location}
+                    {detailRow.from_location || detailRow.location || "N/A"}
                   </p>
                   <p>
-                    <strong>Destination:</strong>{" "}
-                    {detailRow.destination_address}
+                    <strong>Destination:</strong> {detailRow.destination_address || "N/A"}
                   </p>
                   {detailRow.receiver_name && (
                     <p>
@@ -276,7 +361,7 @@ const GatepassDelivery = () => {
                   <p>
                     <strong>Purpose:</strong>
                   </p>
-                  <p className="mb-3">{detailRow.purpose}</p>
+                  <p className="mb-3">{detailRow.purpose || "N/A"}</p>
                   {detailRow.additional_notes && (
                     <>
                       <p>
@@ -297,8 +382,7 @@ const GatepassDelivery = () => {
                     {detailRow.vehicle_number || detailRow.vehicle_no || "N/A"}
                   </p>
                   <p>
-                    <strong>Driver Name:</strong>{" "}
-                    {detailRow.driver_name || "N/A"}
+                    <strong>Driver Name:</strong> {detailRow.driver_name || "N/A"}
                   </p>
                 </div>
               </div>
@@ -320,56 +404,44 @@ const GatepassDelivery = () => {
                     <tbody>
                       {detailRow.materials &&
                       typeof detailRow.materials === "string" ? (
-                        JSON.parse(detailRow.materials).map(
-                          (material, index) => (
-                            <tr key={index}>
-                              <td>{material.description}</td>
-                              <td>
-                                {material.serialNumber ||
-                                  material.serial_number ||
-                                  "N/A"}
-                              </td>
-                              <td>{material.quantity || material.qty}</td>
-                              <td>{material.uom}</td>
-                              <td>
-                                {material.isReturnable
-                                  ? "Yes"
-                                  : material.returnable
-                                  ? "Yes"
-                                  : "No"}
-                              </td>
-                              <td>
-                                {material.returnDate ||
-                                  material.return_date ||
-                                  "N/A"}
-                              </td>
-                            </tr>
-                          )
-                        )
-                      ) : detailRow.materials ? (
-                        detailRow.materials.map((material, index) => (
+                        JSON.parse(detailRow.materials).map((material, index) => (
                           <tr key={index}>
-                            <td>
-                              {material.description || material.item_name}
-                            </td>
+                            <td>{material.description}</td>
                             <td>
                               {material.serialNumber ||
                                 material.serial_number ||
                                 "N/A"}
                             </td>
                             <td>{material.quantity || material.qty}</td>
-                            <td>{material.uom}</td>
+                            <td>{material.uom || "N/A"}</td>
                             <td>
-                              {material.isReturnable
-                                ? "Yes"
-                                : material.returnable
+                              {material.isReturnable || material.returnable
                                 ? "Yes"
                                 : "No"}
                             </td>
                             <td>
-                              {material.returnDate ||
-                                material.return_date ||
+                              {material.returnDate || material.return_date || "N/A"}
+                            </td>
+                          </tr>
+                        ))
+                      ) : detailRow.materials ? (
+                        detailRow.materials.map((material, index) => (
+                          <tr key={index}>
+                            <td>{material.description || material.item_name}</td>
+                            <td>
+                              {material.serialNumber ||
+                                material.serial_number ||
                                 "N/A"}
+                            </td>
+                            <td>{material.quantity || material.qty}</td>
+                            <td>{material.uom || "N/A"}</td>
+                            <td>
+                              {material.isReturnable || material.returnable
+                                ? "Yes"
+                                : "No"}
+                            </td>
+                            <td>
+                              {material.returnDate || material.return_date || "N/A"}
                             </td>
                           </tr>
                         ))
@@ -401,7 +473,7 @@ const GatepassDelivery = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Accept Modal */}
+      {/* Accept Confirmation Modal */}
       <Modal show={!!acceptId} onHide={() => setAcceptId(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Acceptance</Modal.Title>
@@ -416,17 +488,7 @@ const GatepassDelivery = () => {
           <Button
             variant="success"
             onClick={async () => {
-              try {
-                await acceptDelivery(acceptId, user.id); 
-                const res = await fetchDeliveries(
-                  user.location,
-                  user.department
-                );
-                setPasses(res.data);
-                setAcceptId(null);
-              } catch (error) {
-                console.error("Accept failed:", error);
-              }
+              await handleAccept(acceptId);
             }}
           >
             Confirm Accept
@@ -434,7 +496,7 @@ const GatepassDelivery = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Reject Modal */}
+      {/* Reject Issue Modal */}
       <Modal show={!!rejectId} onHide={() => setRejectId(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Report Delivery Issue</Modal.Title>
@@ -458,18 +520,7 @@ const GatepassDelivery = () => {
           <Button
             variant="danger"
             onClick={async () => {
-              try {
-                await rejectDelivery(rejectId, comment, user.id); 
-                const res = await fetchDeliveries(
-                  user.location,
-                  user.department
-                );
-                setPasses(res.data);
-                setRejectId(null);
-                setComment("");
-              } catch (error) {
-                console.error("Reject failed:", error);
-              }
+              await handleReject();
             }}
           >
             Submit Issue

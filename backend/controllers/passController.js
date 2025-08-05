@@ -340,68 +340,37 @@ exports.getMyRequests = (req, res) => {
 
 
 
-// Get all approved but not delivered gate passes
-// exports.getDeliverablePasses = (req, res) => {
-//   db.query(
-//     'SELECT * FROM gate_pass_requests WHERE status = "Approved" AND delivery_status = "Waiting" ORDER BY gate_pass_id DESC',
-//     (err, rows) => {
-//       if (err) return res.status(500).json({ error: err.message });
-//       res.json(rows);
-//     }
-//   );
-// };
 
-// Get deliverable passes filtered by user's location
+
+
+// Get deliverable passes filtered by user's location and delivery status
 exports.getDeliverablePasses = (req, res) => {
-  const { location,  department } = req.query; // Pass location from frontend
+  const { location, department, delivery_status } = req.query; // Pass location, department, and delivery status from frontend
 
   if (!location || !department) {
-    return res.status(400).json({ error: "User location is required" });
+    return res.status(400).json({ error: "User location and department are required" });
   }
+
+  // Default to 'Waiting' if no delivery_status is passed (Pending tab)
+  const statusFilter = delivery_status || "Waiting";
 
   const sql = `
     SELECT * 
     FROM gate_pass_requests 
-    WHERE status = "Approved" 
-      AND delivery_status = "Waiting" 
+    WHERE status = "Approved"
+      AND delivery_status = ? 
       AND destination_address = ? 
       AND department = ?
     ORDER BY gate_pass_id DESC
   `;
 
-  db.query(sql, [location, department], (err, rows) => {
+  db.query(sql, [statusFilter, location, department], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 };
 
 
-// Accept delivery
-// exports.acceptDelivery = (req, res) => {
-//   const { id } = req.params;
-//   db.query(
-//     'UPDATE gate_pass_requests SET delivery_status = "Accepted", delivery_comment = NULL WHERE gate_pass_id = ?',
-//     [id],
-//     err => {
-//       if (err) return res.status(500).json({ error: err.message });
-//       res.json({ message: 'Gate-pass marked as Accepted' });
-//     }
-//   );
-// };
-
-// // Reject delivery with comment
-// exports.rejectDelivery = (req, res) => {
-//   const { id } = req.params;
-//   const { comment } = req.body;
-//   db.query(
-//     'UPDATE gate_pass_requests SET delivery_status = "Issue", delivery_comment = ? WHERE gate_pass_id = ?',
-//     [comment || '', id],
-//     err => {
-//       if (err) return res.status(500).json({ error: err.message });
-//       res.json({ message: 'Delivery issue recorded' });
-//     }
-//   );
-// };
 
 
 // Accept delivery

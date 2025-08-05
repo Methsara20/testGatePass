@@ -118,6 +118,20 @@ const Sidebar = () => {
           </li>
         )}
 
+        {isAdminOrHOD && (
+          <li className="nav-item">
+            <Link
+              className="nav-link py-1 px-2 rounded d-flex align-items-center"
+              to="/cancel-approval"
+              title="cancel approval"
+              style={{ fontSize: "0.9rem", minHeight: "32px" }}
+            >
+              <i className="bi bi-check2-square" style={{ fontSize: "1rem" }}></i>
+              {!isCollapsed && <span className="ms-2">Cancel Approval</span>}
+            </Link>
+          </li>
+        )}
+
         <li className="nav-item">
           <Link
             className="nav-link py-1 px-2 rounded d-flex align-items-center"
