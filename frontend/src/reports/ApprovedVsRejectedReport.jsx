@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Sidebar from "../components/Sidebar";
 import {
   getApprovedVsRejected,
   exportApprovedVsRejected,
@@ -32,6 +31,7 @@ import {
   BiXCircle,
 } from "react-icons/bi";
 import { FaFileAlt } from "react-icons/fa";
+
 
 const COLORS = ["#28a745", "#dc3545", "#ffc107", "#6c757d"];
 
@@ -118,7 +118,9 @@ const ApprovedVsRejectedReport = () => {
 
   return (
     <div className="d-flex">
-      <Sidebar />
+      
+            <div className="flex-grow-1">
+        
       <Container className="mt-4">
         {/* Header */}
         <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
@@ -293,6 +295,7 @@ const ApprovedVsRejectedReport = () => {
           </Card.Body>
         </Card>
       </Container>
+    </div>
     </div>
   );
 };

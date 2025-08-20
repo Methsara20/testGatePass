@@ -76,3 +76,18 @@ exports.loginUser = (req, res) => {
         res.json(results[0]); // send back the user data
     });
 };
+
+exports.getUserById = (req, res) => {
+    const { id } = req.params;
+
+    const query = `SELECT * FROM users WHERE id = ?`;
+    db.query(query, [id], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(results[0]); // return single user
+    });
+};

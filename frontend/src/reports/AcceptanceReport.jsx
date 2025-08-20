@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
 import { getAcceptanceReport, exportAcceptanceReport } from '../services/reportService';
 import { Container, Table, Button, Spinner, Alert, Card, Row, Col, Badge } from 'react-bootstrap';
 import { saveAs } from 'file-saver';
@@ -49,7 +48,9 @@ const AcceptanceReport = () => {
 
   return (
     <div className="d-flex">
-      <Sidebar />
+      
+            <div className="flex-grow-1">
+        
       <Container className="mt-4">
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -154,6 +155,7 @@ const AcceptanceReport = () => {
           </div>
         )}
       </Container>
+    </div>
     </div>
   );
 };

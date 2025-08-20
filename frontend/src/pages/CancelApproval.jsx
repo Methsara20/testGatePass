@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Sidebar from '../components/Sidebar';
 import { fetchCancellableApprovals, fetchCancelledApprovals, cancelApprovalRequest } from '../services/cancelApprovalService';
 import { useAuth } from '../context/AuthContext';
 import { Table, Button, InputGroup, Form, Modal, Spinner, Tabs, Tab, Badge } from 'react-bootstrap';
@@ -91,7 +90,9 @@ const CancelApproval = () => {
 
   return (
     <div className="d-flex">
-      <Sidebar />
+      
+            <div className="flex-grow-1">
+            
       <div className="flex-grow-1 p-4">
         <h4 className="mb-3">Manage Gate Pass Cancellations</h4>
         <p className="text-muted">View and cancel approved requests, or review cancelled history.</p>
@@ -188,6 +189,7 @@ const CancelApproval = () => {
             </div>
           </Tab>
         </Tabs>
+      </div>
       </div>
 
       {/* Cancel Modal */}

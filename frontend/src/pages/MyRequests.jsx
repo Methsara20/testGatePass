@@ -5,10 +5,10 @@ import {
   updatePass,
 } from "../services/gatepassService";
 import { fetchGatePassWithMaterials } from "../services/approvalService";
-import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { Modal, Button, Table, InputGroup, Form } from "react-bootstrap";
 import { BiSearch } from "react-icons/bi";
+
 
 const MyRequests = () => {
   const { user } = useAuth();
@@ -349,7 +349,9 @@ const MyRequests = () => {
 
   return (
     <div className="d-flex">
-      <Sidebar />
+      
+            <div className="flex-grow-1">
+        
       <div className="p-4 flex-grow-1 w-100">
         <h4 className="mb-3">My Gate Pass Requests</h4>
 
@@ -747,6 +749,7 @@ const MyRequests = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+    </div>
     </div>
   );
 };

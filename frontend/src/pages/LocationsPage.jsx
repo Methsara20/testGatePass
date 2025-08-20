@@ -6,7 +6,7 @@ import {
   updateLocation, 
   deleteLocation 
 } from '../services/locationService';
-import Sidebar from '../components/Sidebar';
+
 
 const LocationsPage = () => {
   const [locations, setLocations] = useState([]);
@@ -106,8 +106,9 @@ const LocationsPage = () => {
 
   return (
     <div className="d-flex" style={{ minHeight: '100vh' }}>
-      <Sidebar />
       
+            <div className="flex-grow-1">
+        
       <div className="p-4 flex-grow-1" style={{ overflowX: 'auto' }}>
         <Row className="mb-3 align-items-center">
           <Col md={6}>
@@ -212,6 +213,7 @@ const LocationsPage = () => {
           </Modal.Body>
         </Modal>
       </div>
+    </div>
     </div>
   );
 };

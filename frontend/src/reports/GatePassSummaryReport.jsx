@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
 import { getGatePassSummary, exportGatePassSummary } from '../services/reportService';
 import { Container, Row, Col, Form, Button, Table, Card, Badge, Spinner, Alert } from 'react-bootstrap';
 import { BiSearch, BiDownload, BiRefresh, BiCalendar, BiFilter } from 'react-icons/bi';
@@ -70,7 +69,9 @@ const GatePassSummaryReport = () => {
 
   return (
     <div className="d-flex">
-      <Sidebar />
+      
+            <div className="flex-grow-1">
+        
       <div className="flex-grow-1 p-4">
         {/* Header Section */}
         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -298,6 +299,7 @@ const GatePassSummaryReport = () => {
           to { transform: rotate(360deg); }
         }
       `}</style>
+    </div>
     </div>
   );
 };

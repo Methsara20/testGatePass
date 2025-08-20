@@ -9,6 +9,7 @@ const locationRoutes = require('./routes/locationRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const cancelApprovalRoutes = require('./routes/cancelApprovalRoutes');
+const returnGatePassRoutes = require('./routes/returnGatePassRoutes');
 const { errorHandler } = require('./utils/errorHandler');
 const { logger } = require('./utils/logger');
 
@@ -38,6 +39,7 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/departments', departmentRoutes); 
 app.use('/api/reports', reportRoutes);
 app.use('/api/cancel-approval', cancelApprovalRoutes);
+app.use('/api/return-gatepass', returnGatePassRoutes);
 
 
 // Error handler

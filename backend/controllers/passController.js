@@ -12,9 +12,93 @@ exports.getPasses = (req, res) => {
 };
 
 // Add a new gate pass request
+// exports.addGatepass = (req, res) => {
+//   try {
+//     // ✅ Now req.body is populated
+//     const {
+//       request_type,
+//       request_date,
+//       request_time,
+//       location,
+//       purpose,
+//       additional_notes,
+//       status,
+//       is_draft,
+//       is_printable,
+//       delivery_status,
+//       delivery_comment,
+//       receiver_name,
+//       destination_address,
+//       department, 
+//       transport_mode,
+//       vehicle_no,
+//       driver_name,
+//       remarks,
+//       created_by,
+//       approved_by,
+//       accepted_by
+//     } = req.body;
+
+//     // ✅ Parse 'materials' field from string to array
+//     let materials = [];
+//     if (req.body.materials) {
+//       materials = JSON.parse(req.body.materials); // be cautious here
+//     }
+
+//     const documentFile = req.file; // ✅ contains uploaded file info if sent
+
+//     const query = `
+//       INSERT INTO gate_pass_requests (
+//         request_type, request_date, request_time, location, purpose,
+//         additional_notes, status, is_draft, is_printable, delivery_status,
+//         delivery_comment, receiver_name, destination_address, department, transport_mode,
+//         vehicle_no, driver_name, remarks, created_by, approved_by, accepted_by
+//       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`; 
+
+//     const values = [
+//       request_type, request_date, request_time, location, purpose,
+//       additional_notes, status, is_draft, is_printable, delivery_status,
+//       delivery_comment, receiver_name, destination_address, department, transport_mode,
+//       vehicle_no, driver_name, remarks, created_by, approved_by, accepted_by
+//     ];
+
+//     db.query(query, values, (err, result) => {
+//       if (err) return res.status(500).json({ error: err.message });
+
+//       const gatePassId = result.insertId;
+
+//       if (Array.isArray(materials)) {
+//         const insertMaterialQuery = `
+//           INSERT INTO gate_pass_materials (
+//             gate_pass_id, description, serial_number, qty, uom, returnable, return_date
+//           ) VALUES ?`;
+
+//         const materialValues = materials.map(item => [
+//           gatePassId,
+//           item.description,
+//           item.serial_number,
+//           item.qty,
+//           item.uom,
+//           item.returnable ? 1 : 0, 
+//           item.returnable ? (item.return_date || null) : null
+//         ]);
+
+//         db.query(insertMaterialQuery, [materialValues], (matErr) => {
+//           if (matErr) return res.status(500).json({ error: matErr.message });
+//           res.status(201).json({ message: 'Gatepass and materials added successfully', gatePassId });
+//         });
+//       } else {
+//         res.status(201).json({ message: 'Gatepass added without materials', gatePassId });
+//       }
+//     });
+//   } catch (err) {
+//     console.error("Gatepass submit error:", err);
+//     res.status(400).json({ message: "Invalid form data", error: err.message });
+//   }
+// };
+
 exports.addGatepass = (req, res) => {
   try {
-    // ✅ Now req.body is populated
     const {
       request_type,
       request_date,
@@ -29,37 +113,45 @@ exports.addGatepass = (req, res) => {
       delivery_comment,
       receiver_name,
       destination_address,
-      department, 
+      department,
       transport_mode,
       vehicle_no,
       driver_name,
+      driver_contact,
       remarks,
       created_by,
       approved_by,
-      accepted_by
+      accepted_by,
+      // 🔥 New Columns
+      is_return,
+      reference_gate_pass_id,
+      return_status,
+      return_remark
     } = req.body;
 
-    // ✅ Parse 'materials' field from string to array
     let materials = [];
     if (req.body.materials) {
-      materials = JSON.parse(req.body.materials); // be cautious here
+      materials = JSON.parse(req.body.materials); 
     }
-
-    const documentFile = req.file; // ✅ contains uploaded file info if sent
 
     const query = `
       INSERT INTO gate_pass_requests (
         request_type, request_date, request_time, location, purpose,
         additional_notes, status, is_draft, is_printable, delivery_status,
         delivery_comment, receiver_name, destination_address, department, transport_mode,
-        vehicle_no, driver_name, remarks, created_by, approved_by, accepted_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`; 
+        vehicle_no, driver_name, driver_contact, remarks, created_by, approved_by, accepted_by,
+        is_return, reference_gate_pass_id, return_status, return_remark
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const values = [
       request_type, request_date, request_time, location, purpose,
       additional_notes, status, is_draft, is_printable, delivery_status,
       delivery_comment, receiver_name, destination_address, department, transport_mode,
-      vehicle_no, driver_name, remarks, created_by, approved_by, accepted_by
+      vehicle_no, driver_name, driver_contact, remarks, created_by, approved_by, accepted_by,
+      is_return || 0, 
+      reference_gate_pass_id || null,
+      return_status || null,
+      return_remark || null
     ];
 
     db.query(query, values, (err, result) => {
@@ -67,7 +159,7 @@ exports.addGatepass = (req, res) => {
 
       const gatePassId = result.insertId;
 
-      if (Array.isArray(materials)) {
+      if (Array.isArray(materials) && materials.length > 0) {
         const insertMaterialQuery = `
           INSERT INTO gate_pass_materials (
             gate_pass_id, description, serial_number, qty, uom, returnable, return_date
@@ -79,7 +171,7 @@ exports.addGatepass = (req, res) => {
           item.serial_number,
           item.qty,
           item.uom,
-          item.returnable ? 1 : 0, 
+          item.returnable ? 1 : 0,
           item.returnable ? (item.return_date || null) : null
         ]);
 
@@ -96,6 +188,7 @@ exports.addGatepass = (req, res) => {
     res.status(400).json({ message: "Invalid form data", error: err.message });
   }
 };
+
 
 
 
@@ -266,6 +359,7 @@ exports.getPassSummary = (req, res) => {
     });
   });
 };
+
 
 
 
@@ -476,7 +570,7 @@ function generatePDFContent(doc, gatePass) {
     drawSectionHeader(doc, 'Requester Information', margin);
     const requesterTable = [
       ['Name', gatePass.requester_name || 'N/A', 'Employee ID', gatePass.created_by || 'N/A'],
-      ['Department', gatePass.department || gatePass.requester_role || 'N/A', 'From Location', gatePass.location || 'N/A'],
+      ['Department', gatePass.requester_department || gatePass.requester_role || 'N/A', 'From Location', gatePass.location || 'N/A'],
       ['Emergency Contact', gatePass.requester_phone || 'N/A', '', '']
     ];
     drawInfoTable(doc, requesterTable, margin, contentWidth);

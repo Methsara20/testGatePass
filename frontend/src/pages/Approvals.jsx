@@ -1,60 +1,137 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { fetchSummary, approvePass, rejectPass, fetchGatePassWithMaterials } from '../services/approvalService';
+import { fetchReturnRequests, approveReturnRequest, rejectReturnRequest } from '../services/returnService';
 import { Modal, Button, Table, InputGroup, Form } from 'react-bootstrap';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import Sidebar from '../components/Sidebar';
 import { BiSearch } from "react-icons/bi";
 import { getUserById } from '../services/userService';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 
+
 const Approvals = () => {
   const { user } = useAuth();
   const [tab, setTab] = useState('Pending');
-  const [lists, setLists] = useState({ Pending: [], Approved: [], Rejected: [] });
+  const [lists, setLists] = useState({ Pending: [], Approved: [], Rejected: [], ReturnApprovals: [] });
   const [approveId, setApproveId] = useState(null);
   const [rejectId, setRejectId] = useState(null); 
   const [detailRow, setDetailRow] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPasses, setFilteredPasses] = useState([]);
   const [requesterDetails, setRequesterDetails] = useState(null);
+  const [isReturnApproval, setIsReturnApproval] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Tab configuration constants
+  const TABS = [
+    { id: 'Pending', label: 'Pending' },
+    { id: 'Approved', label: 'Approved' },
+    { id: 'Rejected', label: 'Rejected' },
+    { id: 'ReturnApprovals', label: 'Return Approvals' }
+  ];
 
-  /* fetch helper */
-  // const load = () =>
-  //   fetchSummary()
-  //     .then((r) => {
-  //       setLists(r.data);
-  //       setFilteredPasses(r.data[tab] || []);
-  //     })
-  //     .catch((e) => console.error('Load error', e));
+  // Helper function for consistent date formatting
+  const formatDate = useCallback((dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (e) {
+      console.error('Error formatting date:', e);
+      return 'Invalid date';
+    }
+  }, []);
 
-  // useEffect(() => {      
-  //   load();              
-  // }, []);
+  // Helper function to render materials
+  const renderMaterials = useCallback((materials) => {
+    if (!materials) {
+      return (
+        <tr>
+          <td colSpan="7" className="text-center">
+            No materials listed
+          </td>
+        </tr>
+      );
+    }
 
+    const materialsArray = typeof materials === 'string' ? JSON.parse(materials) : materials;
+    
+    return materialsArray.map((material, index) => (
+      <tr key={index}>
+        <td>{material.description || material.item_name || 'N/A'}</td>
+        <td>{material.serialNumber || material.serial_number || 'N/A'}</td>
+        <td>{material.quantity || material.qty || 'N/A'}</td>
+        <td>{material.uom || 'N/A'}</td>
+        <td>{material.isReturnable || material.returnable ? 'Yes' : 'No'}</td>
+        <td>{material.returnDate || material.return_date || 'N/A'}</td>
+        <td>{material.return_remark || 'N/A'}</td>
+      </tr>
+    ));
+  }, []);
 
+  // Memoized filtered passes
+  const memoizedFilteredPasses = useMemo(() => {
+    if (searchTerm === "") {
+      return lists[tab] || [];
+    } else {
+      return (lists[tab] || []).filter(
+        (p) =>
+          p.gate_pass_id.toString().includes(searchTerm.toLowerCase()) ||
+          (p.description &&
+            p.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (p.location &&
+            p.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (p.department &&
+            p.department.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (p.requester_name && p.requester_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+  }, [searchTerm, lists, tab]);
 
-  const load = () => {
+  // Search handlers
+  const handleSearchChange = useCallback((e) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm("");
+  }, []);
+
+  // Enhanced load function with loading state
+  const load = useCallback(async () => {
     if (!user?.location || !user?.department) {
       console.log('User location or department not available:', { location: user?.location, department: user?.department });
       return;
     }
-  
-    console.log('Fetching for:', { location: user.location, department: user.department }); // Add this line
-    
-    fetchSummary(user.location, user.department) 
-      .then((r) => {
-        console.log('Fetched data:', r.data);
-        setLists(r.data);
-        setFilteredPasses(r.data[tab] || []);
-      })
-      .catch((e) => console.error('Load error', e));
-  };
-  
+
+    setIsLoading(true);
+    try {
+      console.log('Fetching for:', { location: user.location, department: user.department });
+      
+      // Load normal approvals
+      const approvalResponse = await fetchSummary(user.location, user.department);
+      console.log('Fetched data:', approvalResponse.data);
+      setLists((prev) => ({ ...prev, ...approvalResponse.data }));
+      if (tab !== "ReturnApprovals") setFilteredPasses(approvalResponse.data[tab] || []);
+      
+      // Load return approvals (filtered by requester's location/department)
+      const returnResponse = await fetchReturnRequests(user.location, user.department);
+      setLists((prev) => ({ ...prev, ReturnApprovals: returnResponse.data }));
+      if (tab === "ReturnApprovals") setFilteredPasses(returnResponse.data || []);
+    } catch (error) {
+      console.error('Error loading approvals:', error);
+      toast.error('Failed to load approval data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.location, user?.department, tab]);
+
   useEffect(() => {      
     load();              
-  }, [user?.location, user?.department, tab]);
-  
+  }, [load]);
+
+  useEffect(() => {
+    setFilteredPasses(memoizedFilteredPasses);
+  }, [memoizedFilteredPasses]);
 
   const doApprove = async () => {
     try {
@@ -63,12 +140,16 @@ const Approvals = () => {
         return;
       }
       
-      // Show loading toast
       const toastId = toast.loading('Approving request...');
       
-      await approvePass(approveId, user.id);
+      if (isReturnApproval) {
+        // For return approvals
+        await approveReturnRequest(approveId, user.id);
+      } else {
+        // For normal approvals
+        await approvePass(approveId, user.id);
+      }
       
-      // Update to success
       toast.update(toastId, {
         render: 'Request approved successfully!',
         type: 'success',
@@ -77,21 +158,20 @@ const Approvals = () => {
       });
       
       setApproveId(null);
-      load();
+      load(); // Refresh the data
     } catch (error) {
       console.error('Approval failed:', error);
       
+      let errorMessage = 'Failed to approve request';
+      if (error.response?.status === 404) {
+        errorMessage = 'Approval endpoint not found (404)';
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
       
-      toast.error(
-        error.response?.data?.message || 
-        'Failed to approve request. Please try again.',
-        {
-          autoClose: 5000,
-        }
-      );
+      toast.error(errorMessage, { autoClose: 5000 });
     }
   };
-
 
   const doReject = async () => {
     try {
@@ -120,24 +200,6 @@ const Approvals = () => {
       );
     }
   };
-  
-  useEffect(() => {
-    if (searchTerm === "") {
-      setFilteredPasses(lists[tab] || []);
-    } else {
-      const filtered = (lists[tab] || []).filter(
-        (p) =>
-          p.gate_pass_id.toString().includes(searchTerm.toLowerCase()) ||
-          (p.description &&
-            p.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (p.location &&
-            p.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (p.department &&
-            p.department.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      setFilteredPasses(filtered);
-    }
-  }, [searchTerm, lists, tab]);
 
   const handleViewDetails = async (id) => {
     try {
@@ -161,57 +223,71 @@ const Approvals = () => {
     }
   };
 
-  /* row */
-  const Row = ({ r }) => (
+  // Memoized Row component
+  const Row = React.memo(({ r, tab, handleViewDetails, setApproveId, setRejectId, setIsReturnApproval }) => (
     <tr>
-      <td className="fw-bold">{`REQ-${r.gate_pass_id}`}</td>
-      <td>{r.request_type}</td>
+      <td className="fw-bold">
+        {tab === 'ReturnApprovals' ? `RET-${r.gate_pass_id}` : `REQ-${r.gate_pass_id}`}
+      </td>
+      <td>
+        {tab === 'ReturnApprovals' ? 'Returnable (Return Request)' : (r.request_type || 'Gate Pass')}
+      </td>
       <td>
         <span
           className={`badge ${
-            r.status === 'Approved'
+            (r.status === 'Approved' || r.return_status === 'Approved')
               ? 'bg-success'
-              : r.status === 'Rejected'
+              : (r.status === 'Rejected' || r.return_status === 'Rejected')
               ? 'bg-danger'
               : 'bg-warning'
           }`}
         >
-          {r.status}
+          {tab === 'ReturnApprovals' ? (r.return_status || r.status) : r.status}
         </span>
       </td>
-      <td>{r.request_date}</td>
-      <td>{r.created_by}</td>
+      <td>{r.request_date || formatDate(r.created_at)}</td>
+      <td>{r.requester_name || r.created_by}</td>
+      
       <td>
         <i
           className="bi bi-eye text-primary me-3 cursor-pointer"
           onClick={() => handleViewDetails(r.gate_pass_id)}
         />
-        {tab === 'Pending' && (
+        {(tab === 'Pending' || tab === 'ReturnApprovals') && (
           <>
             <i
               className="bi bi-check-lg text-success me-3 cursor-pointer"
-              onClick={() => setApproveId(r.gate_pass_id)}
+              onClick={() => { 
+                setApproveId(r.gate_pass_id); 
+                setIsReturnApproval(tab === 'ReturnApprovals'); 
+              }}
             />
-            <i
-              className="bi bi-x-lg text-danger cursor-pointer"
-              onClick={() => setRejectId(r.gate_pass_id)}
-            />
+            {/* Only show reject for regular gate passes, not return approvals */}
+            {tab !== 'ReturnApprovals' && (
+              <i
+                className="bi bi-x-lg text-danger cursor-pointer"
+                onClick={() => setRejectId(r.gate_pass_id)}
+              />
+            )}
           </>
         )}
       </td>
     </tr>
-  );
+  ));
 
   return (
     <div className="d-flex">
-      <Sidebar />
+      
+      <div className="flex-grow-1">
+        
       <div className="p-4 flex-grow-1 w-100">
+        
         <h4 className="mb-1">Approvals</h4>
         <p className="text-muted">
-          Review and manage pending gate pass approvals.
+          Review and manage normal & return gate pass approvals separately.
         </p>
-
-        {/* Improved Search Input */}
+        
+        {/* Enhanced Search Input */}
         <div className="mb-3">
           <InputGroup>
             <InputGroup.Text>
@@ -219,41 +295,50 @@ const Approvals = () => {
             </InputGroup.Text>
             <Form.Control
               type="text"
-              placeholder="Search by ID, location or department..."
+              placeholder="Search by ID, requester, location or department..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
             />
             {searchTerm && (
               <Button
                 variant="outline-secondary"
-                onClick={() => setSearchTerm("")}
+                onClick={handleClearSearch}
               >
                 Clear
               </Button>
             )}
           </InputGroup>
         </div>
-
-        {/* Tabs */}
+        
+        {/* Enhanced Tabs */}
         <ul className="nav nav-tabs mb-3">
-          {["Pending", "Approved", "Rejected"].map((t) => (
-            <li className="nav-item" key={t}>
+          {TABS.map((t) => (
+            <li className="nav-item" key={t.id}>
               <button
-                className={`nav-link ${tab === t ? "active" : ""}`}
-                onClick={() => setTab(t)}
+                className={`nav-link ${tab === t.id ? "active" : ""}`}
+                onClick={() => setTab(t.id)}
               >
-                {t}
+                {t.label}
                 <span className="badge bg-light text-dark ms-1">
-                  {lists[t]?.length ?? 0}
+                  {lists[t.id]?.length ?? 0}
                 </span>
               </button>
             </li>
           ))}
         </ul>
-
-        {/* Table */}
+        
+        {/* Loading Spinner */}
+        {isLoading && (
+          <div className="text-center my-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        )}
+        
+        {/* Enhanced Table */}
         <div className="table-responsive">
-          <table className="table align-middle">
+          <Table striped bordered hover className="align-middle">
             <thead className="table-light">
               <tr>
                 <th>Gate Pass No</th>
@@ -266,25 +351,35 @@ const Approvals = () => {
             </thead>
             <tbody>
               {filteredPasses.map((r) => (
-                <Row r={r} key={r.gate_pass_id} />
+                <Row 
+                  r={r} 
+                  key={r.gate_pass_id} 
+                  tab={tab}
+                  handleViewDetails={handleViewDetails}
+                  setApproveId={setApproveId}
+                  setRejectId={setRejectId}
+                  setIsReturnApproval={setIsReturnApproval}
+                />
               ))}
-              {filteredPasses.length === 0 && (
+              {filteredPasses.length === 0 && !isLoading && (
                 <tr>
                   <td colSpan="6" className="text-center py-4">
-                    No records
+                    No records found
                   </td>
                 </tr>
               )}
             </tbody>
-          </table>
+          </Table>
         </div>
-
-        {/* Approve modal */}
+        
+        {/* Enhanced Approve modal */}
         <Modal show={!!approveId} onHide={() => setApproveId(null)} centered>
           <Modal.Header closeButton>
             <Modal.Title>Confirm Approval</Modal.Title>
           </Modal.Header>
-          <Modal.Body>Approve this gate-pass request?</Modal.Body>
+          <Modal.Body>
+            Are you sure you want to approve this {isReturnApproval ? 'return' : 'gate pass'} request?
+          </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setApproveId(null)}>
               Cancel
@@ -294,13 +389,13 @@ const Approvals = () => {
             </Button>
           </Modal.Footer>
         </Modal>
-
-        {/* Reject modal */}
+        
+        {/* Enhanced Reject modal */}
         <Modal show={!!rejectId} onHide={() => setRejectId(null)} centered>
           <Modal.Header closeButton>
             <Modal.Title>Confirm Rejection</Modal.Title>
           </Modal.Header>
-          <Modal.Body>Are you sure you want to reject this request?</Modal.Body>
+          <Modal.Body>Are you sure you want to reject this gate pass request?</Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setRejectId(null)}>
               Cancel
@@ -310,8 +405,8 @@ const Approvals = () => {
             </Button>
           </Modal.Footer>
         </Modal>
-
-        {/* Enhanced Details modal */}
+        
+        {/* Full Details modal */}
         <Modal
           show={!!detailRow}
           onHide={() => setDetailRow(null)}
@@ -320,7 +415,7 @@ const Approvals = () => {
         >
           <Modal.Header closeButton>
             <Modal.Title>
-              Gate Pass Request Details - REQ-{detailRow?.gate_pass_id}
+              Gate Pass Request Details - {tab === 'ReturnApprovals' ? 'RET' : 'REQ'}-{detailRow?.gate_pass_id}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
@@ -333,7 +428,7 @@ const Approvals = () => {
                       <strong>Request Type:</strong> {detailRow.request_type}
                     </p>
                     <p>
-                      <strong>Status:</strong> {detailRow.status}
+                      <strong>Status:</strong> {tab === 'ReturnApprovals' ? (detailRow.return_status || detailRow.status) : detailRow.status}
                     </p>
                     <p>
                       <strong>Date:</strong> {detailRow.request_date}
@@ -358,8 +453,8 @@ const Approvals = () => {
                     </p>
                     <p>
                       <strong>Department:</strong>{" "}
-                      {requesterDetails?.department ||
-                        detailRow.department ||
+                      {requesterDetails?.requester_role ||
+                        detailRow.requester_role ||
                         detailRow.requester_role ||
                         "N/A"}
                     </p>
@@ -407,7 +502,6 @@ const Approvals = () => {
                     )}
                   </div>
                 </div>
-
                 <div className="row mb-4">
                   <div className="col-md-6">
                     <h6>Purpose & Notes</h6>
@@ -441,12 +535,15 @@ const Approvals = () => {
                       {detailRow.driver_name || "N/A"}
                     </p>
                     <p>
+                      <strong>Driver Contact:</strong>{" "}
+                      {detailRow.driver_contact || "N/A"}
+                    </p>
+                    <p>
                       <strong>Delivery Comments:</strong>{" "}
                       {detailRow.delivery_comment || "N/A"}
                     </p>
                   </div>
                 </div>
-
                 <div className="row mb-4">
                   <div className="col-12">
                     <h6>Material Details</h6>
@@ -459,74 +556,15 @@ const Approvals = () => {
                           <th>UOM</th>
                           <th>Returnable</th>
                           <th>Return Date</th>
+                          <th>Return Remark</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {detailRow.materials &&
-                        typeof detailRow.materials === "string" ? (
-                          JSON.parse(detailRow.materials).map(
-                            (material, index) => (
-                              <tr key={index}>
-                                <td>{material.description}</td>
-                                <td>
-                                  {material.serialNumber ||
-                                    material.serial_number}
-                                </td>
-                                <td>{material.quantity || material.qty}</td>
-                                <td>{material.uom}</td>
-                                <td>
-                                  {material.isReturnable
-                                    ? "Yes"
-                                    : material.returnable
-                                    ? "Yes"
-                                    : "No"}
-                                </td>
-                                <td>
-                                  {material.returnDate ||
-                                    material.return_date ||
-                                    "N/A"}
-                                </td>
-                              </tr>
-                            )
-                          )
-                        ) : detailRow.materials ? (
-                          detailRow.materials.map((material, index) => (
-                            <tr key={index}>
-                              <td>
-                                {material.description || material.item_name}
-                              </td>
-                              <td>
-                                {material.serialNumber ||
-                                  material.serial_number}
-                              </td>
-                              <td>{material.quantity || material.qty}</td>
-                              <td>{material.uom}</td>
-                              <td>
-                                {material.isReturnable
-                                  ? "Yes"
-                                  : material.returnable
-                                  ? "Yes"
-                                  : "No"}
-                              </td>
-                              <td>
-                                {material.returnDate ||
-                                  material.return_date ||
-                                  "N/A"}
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="6" className="text-center">
-                              No materials listed
-                            </td>
-                          </tr>
-                        )}
+                        {renderMaterials(detailRow.materials)}
                       </tbody>
                     </Table>
                   </div>
                 </div>
-
                 <div className="row">
                   <div className="col-12">
                     <h6>Remarks</h6>
@@ -542,6 +580,7 @@ const Approvals = () => {
             </Button>
           </Modal.Footer>
         </Modal>
+      </div>
       </div>
     </div>
   );

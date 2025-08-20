@@ -7,7 +7,7 @@ import {
   deleteDepartment,
   updateDepartment
 } from '../services/departmentService';
-import Sidebar from "../components/Sidebar";
+
 
 const DepartmentsPage = () => {
   const [departments, setDepartments] = useState([]);
@@ -70,11 +70,13 @@ const DepartmentsPage = () => {
 
   return (
     <div className="d-flex flex-column flex-lg-row min-vh-100">
-      {/* Sidebar - using Bootstrap's col classes for responsive behavior */}
-      <div className="col-lg-2 p-0">
-        <Sidebar />
-      </div>
       
+      <div className="col-lg-2 p-0">
+        
+      </div>
+            {/* Main Content Area */}
+            <div className="flex-grow-1">
+        
       {/* Main content area */}
       <main className="col-lg-10 p-4">
         <h3 className="mb-4">Departments</h3>
@@ -153,6 +155,7 @@ const DepartmentsPage = () => {
           </Modal.Footer>
         </Modal>
       </main>
+    </div>
     </div>
   );
 };

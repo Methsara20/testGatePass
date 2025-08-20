@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
 import { getOverdueMaterials, exportOverdueMaterials } from '../services/reportService';
 import { Container, Table, Button, Card, Badge, Spinner, Form, Row, Col, Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { saveAs } from 'file-saver';
@@ -80,7 +79,9 @@ const OverdueMaterialsReport = () => {
 
   return (
     <div className="d-flex">
-      <Sidebar />
+      
+            <div className="flex-grow-1">
+        
       <Container className="mt-4">
         {/* Header */}
         <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
@@ -225,6 +226,7 @@ const OverdueMaterialsReport = () => {
           </div>
         )}
       </Container>
+    </div>
     </div>
   );
 };

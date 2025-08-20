@@ -1,7 +1,6 @@
 // src/pages/GoodsRequestForm.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -50,8 +49,9 @@ const GoodsRequestForm = () => {
 
   return (
     <div className="d-flex">
-      <Sidebar />
-
+      
+      <div className="flex-grow-1">
+        
       <div className="container p-4 flex-grow-1">
         <h4>New Gate-Pass Request</h4>
 
@@ -171,6 +171,7 @@ const GoodsRequestForm = () => {
           </div>
         </form>
       </div>
+    </div>
     </div>
   );
 };

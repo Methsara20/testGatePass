@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
 import { getMaterialMovement, exportMaterialMovement } from '../services/reportService';
 import { Container, Table, Button, Card, Spinner, Form, Row, Col, Badge, Alert } from 'react-bootstrap';
 import { saveAs } from 'file-saver';
@@ -79,7 +78,8 @@ const MaterialMovementReport = () => {
 
   return (
     <div className="d-flex">
-      <Sidebar />
+            <div className="flex-grow-1">
+        
       <Container className="mt-4">
         {/* Header Section */}
         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -206,6 +206,7 @@ const MaterialMovementReport = () => {
           </div>
         )}
       </Container>
+    </div>
     </div>
   );
 };

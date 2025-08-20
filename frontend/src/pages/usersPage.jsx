@@ -9,7 +9,7 @@ import {
   deleteUser,
 } from "../services/userService";
 import UserForm from "../components/UserForm";
-import Sidebar from "../components/Sidebar";
+
 
 const UsersPage = () => {
   /* ─────────── state ─────────── */
@@ -90,8 +90,9 @@ const UsersPage = () => {
   /* ─────────── render ─────────── */
   return (
     <div className="d-flex">
-      <Sidebar />
-
+      
+            <div className="flex-grow-1">
+        
       <div className="p-4 flex-grow-1 w-100">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="mb-0 fw-semibold">
@@ -254,6 +255,7 @@ const UsersPage = () => {
           </Modal.Body>
         </Modal>
       </div>
+    </div>
     </div>
   );
 };

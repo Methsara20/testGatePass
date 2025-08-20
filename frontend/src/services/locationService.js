@@ -22,8 +22,7 @@ export const getLocations = async () => {
   try {
     const response = await axios.get(API);
     
-    // Debug the raw response structure
-    console.log("API Response:", response.data);
+    
     
     // Handle different response formats
     if (Array.isArray(response.data)) {
