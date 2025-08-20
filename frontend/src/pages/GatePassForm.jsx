@@ -1,0 +1,787 @@
+import React, { useState, useEffect } from "react";
+import { Form, Button, Table, Row, Col, Alert, Spinner } from "react-bootstrap";
+import axios from "axios";
+import Sidebar from "../components/Sidebar";
+import { useAuth } from "../context/AuthContext";
+import { getDepartments } from "../services/departmentService";
+
+const GatePassForm = () => {
+  const { user } = useAuth();
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [locations, setLocations] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
+
+  const [formData, setFormData] = useState({
+    request_type: "Outward",
+    request_date: new Date().toISOString().split("T")[0],
+    request_time: new Date().toTimeString().substring(0, 5),
+    employee_id: "",
+    created_by: "",
+    full_name: "",
+    department: "",
+    email: "",
+    phone: "",
+    from_location: "CPHO",
+    destination_type: "internal",
+    to_location_internal: "",
+    to_department_internal: "",
+    destination_address: "",
+    purpose: "",
+    additional_notes: "",
+    document: null,
+    transport_mode: "",
+    vehicle_number: "",
+    driver_name: "",
+    driver_contact: "",
+    receiver_name: "",
+    delivery_comment: "",
+    remarks: "",
+    status: "Pending",
+    is_draft: false
+  });
+
+  const [materials, setMaterials] = useState([{
+    id: Date.now(),
+    description: "",
+    serial_number: "",
+    qty: 1,
+    uom: "",
+    returnable: false,
+    return_date: ""
+  }]);
+
+  const [submitted, setSubmitted] = useState(false);
+  const [gatePassId, setGatePassId] = useState(null);
+  const [error, setError] = useState("");
+  const [isDraft, setIsDraft] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch locations and departments in parallel
+        const [locationsResponse, departmentsResponse] = await Promise.all([
+          axios.get("http://192.168.10.144:5000/api/locations"),
+          getDepartments()
+        ]);
+
+        setLocations(locationsResponse.data);
+        setDepartments(departmentsResponse.data);
+
+        if (user) {
+          setLoadingUser(false);
+          setFormData(prev => ({
+            ...prev,
+            employee_id: user.id,
+            created_by: user.id,
+            full_name: user.full_name || "",
+            department: user.department || user.role || "",
+            email: user.email || "",
+            phone: user.phone_number || "",
+            from_location: user.location || ""
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("Failed to load required data. Please try again later.");
+      } finally {
+        setLoadingLocations(false);
+        setLoadingDepartments(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleMaterialChange = (id, field, value) => {
+    setMaterials(materials.map(item =>
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
+
+  const toggleReturnable = (id, checked) => {
+    handleMaterialChange(id, 'returnable', checked);
+    if (!checked) {
+      handleMaterialChange(id, 'return_date', '');
+    }
+  };
+
+  const addMaterialRow = () => {
+    setMaterials([...materials, {
+      id: Date.now(),
+      description: "",
+      serial_number: "",
+      qty: 1,
+      uom: "",
+      returnable: false,
+      return_date: ""
+    }]);
+  };
+
+  const removeMaterialRow = (id) => {
+    setMaterials(materials.filter(item => item.id !== id));
+  };
+
+  const handleSubmit = async (e, isDraftSubmit = false) => {
+    e.preventDefault();
+    setError("");
+  
+    if (!formData.created_by) {
+      setError("No valid user ID found. Please ensure you're logged in.");
+      return;
+    }
+  
+    if (!isDraftSubmit) {
+      if (!formData.purpose) {
+        setError("Please enter a purpose");
+        return;
+      }
+  
+      if (materials.some(m => !m.description || !m.qty || !m.uom)) {
+        setError("Please fill all required material fields");
+        return;
+      }
+  
+      if (formData.destination_type === "external" && !formData.receiver_name) {
+        setError("Please enter receiver name for external destinations");
+        return;
+      }
+    }
+  
+    try {
+      const formDataToSend = new FormData();
+  
+      const dbPayload = {
+        request_type: formData.request_type,
+        request_date: formData.request_date,
+        request_time: formData.request_time,
+        location: formData.from_location,
+        purpose: formData.purpose,
+        additional_notes: formData.additional_notes || "",
+        status: "Pending",
+        is_draft: isDraftSubmit,
+        is_printable: 0,
+        delivery_status: "Waiting",
+        department: formData.destination_type === "internal" 
+          ? formData.to_department_internal 
+          : "",
+        destination_address: formData.destination_type === "internal"
+          ? formData.to_location_internal
+          : formData.destination_address,
+        transport_mode: formData.transport_mode,
+        vehicle_no: formData.vehicle_number,
+        driver_name: formData.driver_name,
+        driver_contact: formData.driver_contact,
+        remarks: formData.remarks,
+        created_by: formData.created_by,
+        receiver_name: formData.receiver_name || "",
+        delivery_comment: formData.delivery_comment || ""
+      };
+  
+      Object.entries(dbPayload).forEach(([key, value]) => {
+        formDataToSend.append(key, value);
+      });
+  
+      // Prepare materials data exactly matching backend table structure
+      const materialsToSend = materials.map(material => ({
+        description: material.description,
+        serial_number: material.serial_number || null, // Ensure field exists even if empty
+        qty: material.qty,
+        uom: material.uom,
+        returnable: material.returnable ? 1 : 0, // Convert to tinyint
+        return_date: material.returnable ? material.return_date || null : null // Only include if returnable
+      }));
+  
+      formDataToSend.append('materials', JSON.stringify(materialsToSend));
+  
+      if (formData.document) {
+        formDataToSend.append('document', formData.document);
+      }
+  
+      const response = await axios.post("http://192.168.10.144:5000/api/passes", formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+  
+      setSubmitted(true);
+      setIsDraft(isDraftSubmit);
+      setGatePassId(response.data.gatePassId);
+  
+      if (!isDraftSubmit) {
+        setFormData({
+          ...formData,
+          request_type: "Outward",
+          request_date: new Date().toISOString().split("T")[0],
+          request_time: new Date().toTimeString().substring(0, 5),
+          destination_type: "internal",
+          to_location_internal: "",
+          to_department_internal: "",
+          destination_address: "",
+          purpose: "",
+          additional_notes: "",
+          transport_mode: "",
+          vehicle_number: "",
+          driver_name: "",
+          driver_contact: "",
+          receiver_name: "",
+          delivery_comment: "",
+          remarks: "",
+          status: "Pending",
+          is_draft: false,
+          document: null
+        });
+  
+        setMaterials([{
+          id: Date.now(),
+          description: "",
+          serial_number: "",
+          qty: 1,
+          uom: "",
+          returnable: false,
+          return_date: ""
+        }]);
+      }
+  
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "Failed to submit. Please try again.";
+      setError(errorMessage);
+      console.error("Submission error:", err.response?.data || err.message);
+    }
+  };
+  
+  if (loadingUser) {
+    return (
+      <div className="d-flex">
+        <Sidebar />
+        <div className="p-4 flex-grow-1 w-100">
+          <div className="text-center mt-5">Loading user data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="d-flex">
+        <Sidebar />
+        <div className="p-4 flex-grow-1 w-100">
+          <div className="alert alert-danger">Please log in to access the gate pass form.</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="d-flex">
+      <Sidebar />
+      <div className="p-3 flex-grow-1 w-100 me-4" style={{ fontSize: '0.9rem' }}>
+        <h4 className="mb-3">Material Gate Pass Request Form</h4>
+
+        {submitted && (
+          <Alert variant="success" className="py-2">
+            {isDraft ? "Draft saved successfully!" : "Gate pass submitted successfully!"}
+            {gatePassId && ` Gate Pass ID: ${gatePassId}`}
+          </Alert>
+        )}
+        {error && <Alert variant="danger" className="py-2">{error}</Alert>}
+
+        <Form onSubmit={(e) => handleSubmit(e, false)}>
+          <div className="mb-2 fw-bold small">
+            Gate Pass No: <span className="text-primary">{gatePassId || "Auto-generated"}</span>
+          </div>
+
+          {/* Basic Info - 3 Boxes in a Row */}
+          <Row className="mb-2">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Request Type</Form.Label>
+                <Form.Control
+                  as="select"
+                  size="sm"
+                  value={formData.request_type}
+                  onChange={(e) => handleChange('request_type', e.target.value)}
+                  required
+                >
+                  <option value="Non-returnable">Non-returnable</option>
+                  <option value="Returnable">Returnable</option>
+                  
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Date</Form.Label>
+                <Form.Control
+                  type="date"
+                  size="sm"
+                  value={formData.request_date}
+                  onChange={(e) => handleChange('request_date', e.target.value)}
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Time</Form.Label>
+                <Form.Control
+                  type="time"
+                  size="sm"
+                  value={formData.request_time}
+                  onChange={(e) => handleChange('request_time', e.target.value)}
+                  required
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* From Location - Single Field */}
+          <Row className="mb-2">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">From Location</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  size="sm"
+                  value={formData.from_location} 
+                  disabled 
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Purpose and Notes - 2 Boxes */}
+          <Row className="mb-2">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Purpose *</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  size="sm"
+                  rows={2}
+                  value={formData.purpose}
+                  onChange={(e) => handleChange('purpose', e.target.value)}
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Additional Notes</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  size="sm"
+                  rows={2}
+                  value={formData.additional_notes}
+                  onChange={(e) => handleChange('additional_notes', e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Employee Details - 3 Boxes in Row 1 */}
+          <Row className="mb-2">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Employee ID</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  size="sm"
+                  value={formData.employee_id} 
+                  disabled 
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Name</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  size="sm"
+                  value={formData.full_name} 
+                  disabled 
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Department</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  size="sm"
+                  value={formData.department} 
+                  disabled 
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Email and Phone - 2 Boxes */}
+          <Row className="mb-2">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Email</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  size="sm"
+                  value={formData.email} 
+                  disabled 
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Phone</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  size="sm"
+                  value={formData.phone} 
+                  disabled 
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Destination Type - Radio Buttons */}
+          <Form.Group className="mb-2">
+            <Form.Label className="small mb-1">Destination Type</Form.Label>
+            <div className="d-flex gap-3">
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="destination_type"
+                  id="internal"
+                  value="internal"
+                  checked={formData.destination_type === "internal"}
+                  onChange={() => handleChange('destination_type', 'internal')}
+                />
+                <label className="form-check-label small" htmlFor="internal">
+                  Internal
+                </label>
+              </div>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="destination_type"
+                  id="external"
+                  value="external"
+                  checked={formData.destination_type === "external"}
+                  onChange={() => handleChange('destination_type', 'external')}
+                />
+                <label className="form-check-label small" htmlFor="external">
+                  External
+                </label>
+              </div>
+            </div>
+          </Form.Group>
+
+          {/* Destination Details - Conditional Layout */}
+          {formData.destination_type === "internal" ? (
+            <Row className="mb-2">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="small mb-1">To Location (Internal)</Form.Label>
+                  {loadingLocations ? (
+                    <div className="d-flex align-items-center">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      <span className="small">Loading...</span>
+                    </div>
+                  ) : (
+                    <Form.Control
+                      as="select"
+                      size="sm"
+                      value={formData.to_location_internal}
+                      onChange={(e) => handleChange('to_location_internal', e.target.value)}
+                      required
+                    >
+                      <option value="">Select Location</option>
+                      {locations.map((location) => (
+                        <option key={location.location_id} value={location.location_name}>
+                          {location.location_name}
+                        </option>
+                      ))}
+                    </Form.Control>
+                  )}
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="small mb-1">To Department (Internal)</Form.Label>
+                  {loadingDepartments ? (
+                    <div className="d-flex align-items-center">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      <span className="small">Loading...</span>
+                    </div>
+                  ) : (
+                    <Form.Control
+                      as="select"
+                      size="sm"
+                      value={formData.to_department_internal}
+                      onChange={(e) => handleChange('to_department_internal', e.target.value)}
+                      required
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((dept) => (
+                        <option key={dept.department_id} value={dept.department_name}>
+                          {dept.department_name}
+                        </option>
+                      ))}
+                    </Form.Control>
+                  )}
+                </Form.Group>
+              </Col>
+            </Row>
+          ) : (
+            <Row className="mb-2">
+              <Col md={8}>
+                <Form.Group>
+                  <Form.Label className="small mb-1">Destination Address (External)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    value={formData.destination_address}
+                    onChange={(e) => handleChange('destination_address', e.target.value)}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group>
+                  <Form.Label className="small mb-1">Receiver Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    value={formData.receiver_name}
+                    onChange={(e) => handleChange('receiver_name', e.target.value)}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          )}
+
+          {/* Transport Details - 3 Boxes Row 1 */}
+          <Row className="mb-2">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Transport Mode</Form.Label>
+                <Form.Control
+                  as="select"
+                  size="sm"
+                  value={formData.transport_mode}
+                  onChange={(e) => handleChange('transport_mode', e.target.value)}
+                >
+                  <option value="">Select Transport</option>
+                  <option value="Company Vehicle">Company Vehicle</option>
+                  <option value="Courier">Courier</option>
+                  <option value="Personal Vehicle">Personal Vehicle</option>
+                  <option value="Other">Other</option>
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Vehicle Number</Form.Label>
+                <Form.Control
+                  type="text"
+                  size="sm"
+                  value={formData.vehicle_number}
+                  onChange={(e) => handleChange('vehicle_number', e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Driver Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  size="sm"
+                  value={formData.driver_name}
+                  onChange={(e) => handleChange('driver_name', e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Driver Contact - Single Box */}
+          <Row className="mb-2">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Driver Contact</Form.Label>
+                <Form.Control
+                  type="text"
+                  size="sm"
+                  value={formData.driver_contact}
+                  onChange={(e) => handleChange('driver_contact', e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Comments and Remarks - 2 Boxes */}
+          <Row className="mb-2">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Delivery Comments</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  size="sm"
+                  rows={2}
+                  value={formData.delivery_comment}
+                  onChange={(e) => handleChange('delivery_comment', e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Remarks</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  size="sm"
+                  rows={2}
+                  value={formData.remarks}
+                  onChange={(e) => handleChange('remarks', e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Material Details - Compact Table */}
+          <h6 className="mt-3 mb-2">Material Details</h6>
+          <Table bordered responsive size="sm" className="mb-2">
+            <thead className="table-light">
+              <tr style={{ fontSize: '0.8rem' }}>
+                <th>Item Description*</th>
+                <th>Serial Number*</th>
+                <th>Qty*</th>
+                <th>UOM*</th>
+                <th>Returnable</th>
+                <th>Return Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {materials.map(item => (
+                <tr key={item.id}>
+                  <td>
+                    <Form.Control
+                      type="text"
+                      size="sm"
+                      value={item.description}
+                      onChange={e => handleMaterialChange(item.id, 'description', e.target.value)}
+                      required
+                    />
+                  </td>
+                  <td>
+                    <Form.Control
+                      type="text"
+                      size="sm"
+                      value={item.serial_number}
+                      onChange={e => handleMaterialChange(item.id, 'serial_number', e.target.value)}
+                      placeholder="SN-0001"
+                      required
+                    />
+                  </td>
+                  <td style={{ width: '80px' }}>
+                    <Form.Control
+                      type="number"
+                      size="sm"
+                      min="1"
+                      value={item.qty}
+                      onChange={e => handleMaterialChange(item.id, 'qty', parseInt(e.target.value) || 0)}
+                      required
+                    />
+                  </td>
+                  <td style={{ width: '100px' }}>
+                    <Form.Control
+                      as="select"
+                      size="sm"
+                      value={item.uom}
+                      onChange={e => handleMaterialChange(item.id, 'uom', e.target.value)}
+                      required
+                    >
+                      <option value="">Select</option>
+                      <option value="Unit">Unit</option>
+                      <option value="PC">Piece</option>
+                      <option value="KG">Kilogram</option>
+                      <option value="M">Meter</option>
+                      <option value="L">Liter</option>
+                      <option value="SET">Set</option>
+                    </Form.Control>
+                  </td>
+                  <td className="text-center" style={{ width: '80px' }}>
+                    <Form.Check
+                      type="checkbox"
+                      size="sm"
+                      checked={item.returnable}
+                      disabled={formData.request_type === "Non-returnable"}
+                      onChange={e => toggleReturnable(item.id, e.target.checked)}
+                    />
+                  </td>
+                  <td style={{ width: '130px' }}>
+                    <Form.Control
+                      type="date"
+                      size="sm"
+                      value={item.return_date}
+                      onChange={e => handleMaterialChange(item.id, 'return_date', e.target.value)}
+                      disabled={!item.returnable || formData.request_type === "Non-returnable"}
+                      min={formData.request_date}
+                    />
+                  </td>
+                  <td className="text-center" style={{ width: '60px' }}>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => removeMaterialRow(item.id)}
+                      title="Remove row"
+                      disabled={materials.length <= 1}
+                    >
+                      <i className="bi bi-trash" style={{ fontSize: '0.8rem' }}></i>
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+
+          <Button 
+            variant="outline-primary" 
+            size="sm"
+            onClick={addMaterialRow} 
+            className="mb-3"
+          >
+            <i className="bi bi-plus-circle me-1"></i> Add Material
+          </Button>
+
+          {/* <Row className="mb-3">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="small mb-1">Supporting Document (optional)</Form.Label>
+                <Form.Control
+                  type="file"
+                  size="sm"
+                  onChange={(e) => handleChange('document', e.target.files[0])}
+                />
+              </Form.Group>
+            </Col>
+          </Row> */}
+
+          <div className="d-flex justify-content-end mt-3">
+            <Button type="submit" variant="primary" size="sm">
+              Submit Gate Pass
+            </Button>
+          </div>
+        </Form>
+      </div>
+    </div>
+  );
+};
+
+export default GatePassForm;
