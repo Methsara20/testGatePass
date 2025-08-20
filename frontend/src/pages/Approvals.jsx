@@ -30,11 +30,15 @@ const Approvals = () => {
     { id: 'ReturnApprovals', label: 'Return Approvals' }
   ];
 
-  // Helper function for consistent date formatting
   const formatDate = useCallback((dateString) => {
     if (!dateString) return 'N/A';
     try {
-      return new Date(dateString).toLocaleDateString();
+      return new Date(dateString).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric'
+      });
+      // This will give you: DD/MM/YYYY format (e.g., 19/08/2025)
     } catch (e) {
       console.error('Error formatting date:', e);
       return 'Invalid date';

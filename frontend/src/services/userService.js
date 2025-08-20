@@ -10,3 +10,8 @@ export const updateUser = (id, data) => axios.put(`${BASE_URL}/${id}`, data);
 export const deleteUser = (id) => axios.delete(`${BASE_URL}/${id}`);
 //
 export const getUserById = (id) => axios.get(`${BASE_URL}/${id}`);
+export const updatePassword = (id, currentPassword, newPassword) => 
+    axios.put(`${BASE_URL}/${id}/password`, { 
+      currentPassword, 
+      newPassword 
+    });

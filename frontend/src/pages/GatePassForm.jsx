@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Form, Button, Table, Row, Col, Alert, Spinner, Card, ProgressBar, Tooltip, OverlayTrigger, Badge, Modal } from "react-bootstrap";
+import { Form, Button, Table, Row, Col, Alert, Spinner, Card, ProgressBar, Tooltip, OverlayTrigger, Badge, Modal, InputGroup } from "react-bootstrap";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { getDepartments } from "../services/departmentService";
+import { BiMap, BiBuilding, BiCar, BiPackage, BiChevronDown } from "react-icons/bi";
+import "../styles/GatePassForm.css"; // We'll create this CSS file for animations
 
 const GatePassForm = () => {
   const { user } = useAuth();
@@ -72,7 +74,7 @@ const GatePassForm = () => {
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
-
+  
   // Update date and time in real-time
   useEffect(() => {
     const interval = setInterval(() => {
@@ -83,10 +85,9 @@ const GatePassForm = () => {
         request_time: now.toTimeString().substring(0, 5)
       }));
     }, 60000); // Update every minute
-
     return () => clearInterval(interval);
   }, []);
-
+  
   // Calculate form progress
   const calculateProgress = () => {
     let filledFields = 0;
@@ -120,7 +121,7 @@ const GatePassForm = () => {
     
     return Math.round((filledFields / totalFields) * 100);
   };
-
+  
   // Load templates on component mount
   useEffect(() => {
     const savedTemplates = localStorage.getItem('gatePassTemplates');
@@ -132,12 +133,12 @@ const GatePassForm = () => {
       }
     }
   }, []);
-
+  
   // Update progress when form changes
   useEffect(() => {
     setProgress(calculateProgress());
   }, [formData, materials]);
-
+  
   // Initialize canvas for signature
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -178,7 +179,7 @@ const GatePassForm = () => {
       canvas.removeEventListener('mouseout', stopDrawing);
     };
   }, [showSignaturePad]);
-
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -211,7 +212,7 @@ const GatePassForm = () => {
     };
     fetchData();
   }, [user]);
-
+  
   // Reset form to initial state
   const resetForm = () => {
     const now = new Date();
@@ -258,24 +259,24 @@ const GatePassForm = () => {
     setExpectedReturnDate("");
     setSignature("");
   };
-
+  
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
+  
   const handleMaterialChange = (id, field, value) => {
     setMaterials(materials.map(item =>
       item.id === id ? { ...item, [field]: value } : item
     ));
   };
-
+  
   const toggleReturnable = (id, checked) => {
     handleMaterialChange(id, 'returnable', checked);
     if (!checked) {
       handleMaterialChange(id, 'return_date', '');
     }
   };
-
+  
   const addMaterialRow = () => {
     setMaterials([...materials, {
       id: Date.now(),
@@ -287,11 +288,11 @@ const GatePassForm = () => {
       return_date: ""
     }]);
   };
-
+  
   const removeMaterialRow = (id) => {
     setMaterials(materials.filter(item => item.id !== id));
   };
-
+  
   const saveAsTemplate = () => {
     // Check if we've reached the maximum of 5 templates
     if (templates.length >= 5) {
@@ -319,7 +320,7 @@ const GatePassForm = () => {
       alert("Template saved successfully! Form has been reset.");
     }
   };
-
+  
   const deleteTemplate = (id) => {
     if (window.confirm("Are you sure you want to delete this template?")) {
       const updatedTemplates = templates.filter(template => template.id !== id);
@@ -327,14 +328,14 @@ const GatePassForm = () => {
       localStorage.setItem('gatePassTemplates', JSON.stringify(updatedTemplates));
     }
   };
-
+  
   const loadTemplate = (template) => {
     setFormData(template.formData);
     setMaterials(template.materials);
     setShowTemplates(false);
     alert(`Template "${template.name}" loaded!`);
   };
-
+  
   const clearSignature = () => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -343,7 +344,7 @@ const GatePassForm = () => {
       setSignature("");
     }
   };
-
+  
   const saveSignature = () => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -351,7 +352,7 @@ const GatePassForm = () => {
       setShowSignaturePad(false);
     }
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -468,29 +469,109 @@ const GatePassForm = () => {
       </div>
     );
   }
-
-  // Filter locations to exclude user's current location
-  const filteredLocations = locations.filter(location => 
+  
+  // Filter locations to exclude user's current location but always include "CPHO"
+  let filteredLocations = locations.filter(location => 
     location.location_name !== formData.from_location
   );
   
-  // Filter departments to exclude user's current department
-  const filteredDepartments = departments.filter(dept => 
+  // Always include "CPHO" location
+  const cphoLocation = locations.find(loc => 
+    loc.location_name === "CPHO"
+  );
+  
+  if (cphoLocation && !filteredLocations.some(loc => 
+    loc.location_name === "CPHO"
+  )) {
+    filteredLocations = [...filteredLocations, cphoLocation];
+  }
+  
+  // Filter departments to exclude user's current department but always include "retail"
+  let filteredDepartments = departments.filter(dept => 
     dept.department_name !== formData.department
   );
-
+  
+  // Always include "retail" department
+  const retailDepartment = departments.find(dept => 
+    dept.department_name.toLowerCase() === 'retail'
+  );
+  
+  if (retailDepartment && !filteredDepartments.some(dept => 
+    dept.department_name.toLowerCase() === 'retail'
+  )) {
+    filteredDepartments = [...filteredDepartments, retailDepartment];
+  }
+  
   const renderTooltip = (props, text) => (
     <Tooltip id="button-tooltip" {...props}>
       {text}
     </Tooltip>
   );
-
+  
   const selectFromCatalog = (catalogItem) => {
     const lastMaterial = materials[materials.length - 1];
     handleMaterialChange(lastMaterial.id, 'description', catalogItem.description);
     handleMaterialChange(lastMaterial.id, 'uom', catalogItem.uom);
   };
-
+  
+  // Custom dropdown component with arrow animation
+  const CustomDropdown = ({ label, icon, value, onChange, options, loading, required, disabled, showIcon = true }) => (
+    <div className="mb-3">
+      <div className="d-flex align-items-center mb-1">
+        {showIcon && icon}
+        <Form.Label className="fw-bold small mb-0 ms-1">{label}</Form.Label>
+      </div>
+      <div className="position-relative dropdown-wrapper">
+        {loading ? (
+          <div className="d-flex align-items-center p-2 border rounded bg-white">
+            <Spinner animation="border" size="sm" className="me-2" />
+            <span className="small">Loading...</span>
+          </div>
+        ) : (
+          <Form.Control
+            as="select"
+            value={value}
+            onChange={onChange}
+            required={required}
+            disabled={disabled}
+            className="py-2 custom-dropdown"
+          >
+            <option value="">{`Select ${label}`}</option>
+            {options.map((option, index) => (
+              <option key={index} value={option.value || option}>
+                {option.label || option}
+              </option>
+            ))}
+          </Form.Control>
+        )}
+        <BiChevronDown className="dropdown-arrow" />
+      </div>
+    </div>
+  );
+  
+  // Simple dropdown component for Request Type and Priority
+  const SimpleDropdown = ({ label, value, onChange, options, required }) => (
+    <Form.Group>
+      <Form.Label className="fw-bold small">{label}</Form.Label>
+      <div className="position-relative dropdown-wrapper">
+        <Form.Control
+          as="select"
+          value={value}
+          onChange={onChange}
+          required={required}
+          className="py-2 custom-dropdown"
+        >
+          {options.map((option, index) => (
+            <option key={index} value={option.value || option}>
+              {option.label || option}
+            </option>
+          ))}
+        </Form.Control>
+        <BiChevronDown className="dropdown-arrow" />
+      </div>
+    </Form.Group>
+  );
+  
   return (
     <div className="container-fluid vh-100 d-flex flex-column p-0">
       <div className="row flex-grow-1 g-0">
@@ -559,23 +640,34 @@ const GatePassForm = () => {
                   </div>
                   
                   <Row className="mb-3">
-                    <Col md={4}>
-                      <Form.Group>
-                        <Form.Label className="small mb-1">Request Type</Form.Label>
-                        <Form.Control
-                          as="select"
-                          size="sm"
-                          value={formData.request_type}
-                          onChange={(e) => handleChange('request_type', e.target.value)}
-                          required
-                          className="py-2"
-                        >
-                          <option value="Non-returnable">Non-returnable</option>
-                          <option value="Returnable">Returnable</option>
-                        </Form.Control>
-                      </Form.Group>
+                    <Col md={2}>
+                      <SimpleDropdown
+                        label="Request Type"
+                        size="sm"
+                        value={formData.request_type}
+                        onChange={(e) => handleChange('request_type', e.target.value)}
+                        options={[
+                          { value: "Non-returnable", label: "Non-returnable" },
+                          { value: "Returnable", label: "Returnable" }
+                        ]}
+                        required
+                      />
                     </Col>
-                    <Col md={4}>
+                    <Col md={2}>
+                      <SimpleDropdown
+                        label="Priority"
+                        size="sm"
+                        value={priority}
+                        onChange={(e) => setPriority(e.target.value)}
+                        options={[
+                          { value: "Normal", label: "Normal" },
+                          { value: "High", label: "High" },
+                          { value: "Urgent", label: "Urgent" }
+                        ]}
+                           className="py-2 bg-white"
+                      />
+                    </Col>
+                    {/* <Col md={2}>
                       <Form.Group>
                         <Form.Label className="small mb-1">Date</Form.Label>
                         <Form.Control
@@ -587,7 +679,7 @@ const GatePassForm = () => {
                         />
                       </Form.Group>
                     </Col>
-                    <Col md={4}>
+                    <Col md={2}>
                       <Form.Group>
                         <Form.Label className="small mb-1">Time</Form.Label>
                         <Form.Control
@@ -599,10 +691,7 @@ const GatePassForm = () => {
                         />
                       </Form.Group>
                     </Col>
-                  </Row>
-                  
-                  <Row className="mb-3">
-                    <Col md={4}>
+                     <Col md={2}>
                       <Form.Group>
                         <Form.Label className="small mb-1">From Location</Form.Label>
                         <Form.Control 
@@ -613,27 +702,11 @@ const GatePassForm = () => {
                           className="py-2 bg-white"
                         />
                       </Form.Group>
-                    </Col>
-                    <Col md={4}>
-                      <Form.Group>
-                        <Form.Label className="small mb-1">Priority</Form.Label>
-                        <Form.Control
-                          as="select"
-                          size="sm"
-                          value={priority}
-                          onChange={(e) => setPriority(e.target.value)}
-                          className="py-2"
-                        >
-                          <option value="Normal">Normal</option>
-                          <option value="High">High</option>
-                          <option value="Urgent">Urgent</option>
-                        </Form.Control>
-                      </Form.Group>
-                    </Col>
+                    </Col> */}
                     {formData.request_type === "Returnable" && (
-                      <Col md={4}>
+                      <Col md={2}>
                         <Form.Group>
-                          <Form.Label className="small mb-1">Expected Return Date</Form.Label>
+                          <Form.Label className="fw-bold small">Expected Return Date</Form.Label>
                           <Form.Control
                             type="date"
                             size="sm"
@@ -647,10 +720,12 @@ const GatePassForm = () => {
                     )}
                   </Row>
                   
+                  
+                  
                   <Row className="mb-3">
                     <Col md={6}>
                       <Form.Group>
-                        <Form.Label className="small mb-1">Purpose *</Form.Label>
+                        <Form.Label className="fw-bold small">Purpose *</Form.Label>
                         <Form.Control
                           as="textarea"
                           size="sm"
@@ -681,78 +756,9 @@ const GatePassForm = () => {
                 </div>
                 
                 <div className="mb-4 p-4 bg-light rounded shadow-sm">
-                  <h5 className="mb-3">Employee Details</h5>
-                  <Row className="mb-3">
-                    <Col md={4}>
-                      <Form.Group>
-                        <Form.Label className="small mb-1">Employee ID</Form.Label>
-                        <Form.Control 
-                          type="text" 
-                          size="sm"
-                          value={formData.employee_id} 
-                          disabled 
-                          className="py-2 bg-white"
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={4}>
-                      <Form.Group>
-                        <Form.Label className="small mb-1">Name</Form.Label>
-                        <Form.Control 
-                          type="text" 
-                          size="sm"
-                          value={formData.full_name} 
-                          disabled 
-                          className="py-2 bg-white"
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={4}>
-                      <Form.Group>
-                        <Form.Label className="small mb-1">Department</Form.Label>
-                        <Form.Control 
-                          type="text" 
-                          size="sm"
-                          value={formData.department} 
-                          disabled 
-                          className="py-2 bg-white"
-                        />
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                  
-                  <Row className="mb-3">
-                    <Col md={5}>
-                      <Form.Group>
-                        <Form.Label className="small mb-1">Email</Form.Label>
-                        <Form.Control 
-                          type="text" 
-                          size="sm"
-                          value={formData.email} 
-                          disabled 
-                          className="py-2 bg-white"
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={5}>
-                      <Form.Group>
-                        <Form.Label className="small mb-1">Phone</Form.Label>
-                        <Form.Control 
-                          type="text" 
-                          size="sm"
-                          value={formData.phone} 
-                          disabled 
-                          className="py-2 bg-white"
-                        />
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                </div>
-                
-                <div className="mb-4 p-4 bg-light rounded shadow-sm">
                   <h5 className="mb-3">Destination Information</h5>
                   <Form.Group className="mb-3">
-                    <Form.Label className="small mb-1">Destination Type</Form.Label>
+                    <Form.Label className="fw-bold small">Destination Type</Form.Label>
                     <div className="d-flex gap-3">
                       <div className="form-check">
                         <input
@@ -764,7 +770,7 @@ const GatePassForm = () => {
                           checked={formData.destination_type === "internal"}
                           onChange={() => handleChange('destination_type', 'internal')}
                         />
-                        <label className="form-check-label small" htmlFor="internal">
+                        <label className="fw-bold small" htmlFor="internal">
                           Internal
                         </label>
                       </div>
@@ -778,7 +784,7 @@ const GatePassForm = () => {
                           checked={formData.destination_type === "external"}
                           onChange={() => handleChange('destination_type', 'external')}
                         />
-                        <label className="form-check-label small" htmlFor="external">
+                        <label className="fw-bold small" htmlFor="external">
                           External
                         </label>
                       </div>
@@ -787,59 +793,33 @@ const GatePassForm = () => {
                   
                   {formData.destination_type === "internal" ? (
                     <Row className="mb-3">
-                      <Col md={6}>
-                        <Form.Group>
-                          <Form.Label className="small mb-1">To Location (Internal)</Form.Label>
-                          {loadingLocations ? (
-                            <div className="d-flex align-items-center">
-                              <Spinner animation="border" size="sm" className="me-2" />
-                              <span className="small">Loading...</span>
-                            </div>
-                          ) : (
-                            <Form.Control
-                              as="select"
-                              size="sm"
-                              value={formData.to_location_internal}
-                              onChange={(e) => handleChange('to_location_internal', e.target.value)}
-                              required
-                              className="py-2"
-                            >
-                              <option value="">Select Location</option>
-                              {filteredLocations.map((location) => (
-                                <option key={location.location_id} value={location.location_name}>
-                                  {location.location_name}
-                                </option>
-                              ))}
-                            </Form.Control>
-                          )}
-                        </Form.Group>
+                      <Col md={4}>
+                        <CustomDropdown
+                          label="Location"
+                          icon={<BiMap className="text-primary" />}
+                          value={formData.to_location_internal}
+                          onChange={(e) => handleChange('to_location_internal', e.target.value)}
+                          options={filteredLocations.map(loc => ({
+                            value: loc.location_name,
+                            label: loc.location_name
+                          }))}
+                          loading={loadingLocations}
+                          required
+                        />
                       </Col>
-                      <Col md={6}>
-                        <Form.Group>
-                          <Form.Label className="small mb-1">To Department (Internal)</Form.Label>
-                          {loadingDepartments ? (
-                            <div className="d-flex align-items-center">
-                              <Spinner animation="border" size="sm" className="me-2" />
-                              <span className="small">Loading...</span>
-                            </div>
-                          ) : (
-                            <Form.Control
-                              as="select"
-                              size="sm"
-                              value={formData.to_department_internal}
-                              onChange={(e) => handleChange('to_department_internal', e.target.value)}
-                              required
-                              className="py-2"
-                            >
-                              <option value="">Select Department</option>
-                              {filteredDepartments.map((dept) => (
-                                <option key={dept.department_id} value={dept.department_name}>
-                                  {dept.department_name}
-                                </option>
-                              ))}
-                            </Form.Control>
-                          )}
-                        </Form.Group>
+                      <Col md={4}>
+                        <CustomDropdown
+                          label="Department"
+                          icon={<BiBuilding className="text-primary" />}
+                          value={formData.to_department_internal}
+                          onChange={(e) => handleChange('to_department_internal', e.target.value)}
+                          options={filteredDepartments.map(dept => ({
+                            value: dept.department_name,
+                            label: dept.department_name
+                          }))}
+                          loading={loadingDepartments}
+                          required
+                        />
                       </Col>
                     </Row>
                   ) : (
@@ -878,22 +858,18 @@ const GatePassForm = () => {
                   <h5 className="mb-3">Transport Details</h5>
                   <Row className="mb-3">
                     <Col md={4}>
-                      <Form.Group>
-                        <Form.Label className="small mb-1">Transport Mode</Form.Label>
-                        <Form.Control
-                          as="select"
-                          size="sm"
-                          value={formData.transport_mode}
-                          onChange={(e) => handleChange('transport_mode', e.target.value)}
-                          className="py-2"
-                        >
-                          <option value="">Select Transport</option>
-                          <option value="Company Vehicle">Company Vehicle</option>
-                          <option value="Courier">Courier</option>
-                          <option value="Personal Vehicle">Personal Vehicle</option>
-                          <option value="Other">Other</option>
-                        </Form.Control>
-                      </Form.Group>
+                      <CustomDropdown
+                        label="Transport Mode"
+                        icon={<BiCar className="text-primary" />}
+                        value={formData.transport_mode}
+                        onChange={(e) => handleChange('transport_mode', e.target.value)}
+                        options={[
+                          { value: "Company Vehicle", label: "Company Vehicle" },
+                          { value: "Courier", label: "Courier" },
+                          { value: "Personal Vehicle", label: "Personal Vehicle" },
+                          { value: "Other", label: "Other" }
+                        ]}
+                      />
                     </Col>
                     <Col md={4}>
                       <Form.Group>
@@ -1052,22 +1028,25 @@ const GatePassForm = () => {
                             />
                           </td>
                           <td style={{ width: '100px' }}>
-                            <Form.Control
-                              as="select"
-                              size="sm"
-                              value={item.uom}
-                              onChange={e => handleMaterialChange(item.id, 'uom', e.target.value)}
-                              required
-                              className="py-2"
-                            >
-                              <option value="">Select</option>
-                              <option value="Unit">Unit</option>
-                              <option value="PC">Piece</option>
-                              <option value="KG">Kilogram</option>
-                              <option value="M">Meter</option>
-                              <option value="L">Liter</option>
-                              <option value="SET">Set</option>
-                            </Form.Control>
+                            <div className="position-relative dropdown-wrapper">
+                              <Form.Control
+                                as="select"
+                                size="sm"
+                                value={item.uom}
+                                onChange={e => handleMaterialChange(item.id, 'uom', e.target.value)}
+                                required
+                                className="py-2 custom-dropdown"
+                              >
+                                <option value="">Select</option>
+                                <option value="Unit">Unit</option>
+                                <option value="PC">Piece</option>
+                                <option value="KG">Kilogram</option>
+                                <option value="M">Meter</option>
+                                <option value="L">Liter</option>
+                                <option value="SET">Set</option>
+                              </Form.Control>
+                              <BiChevronDown className="dropdown-arrow" />
+                            </div>
                           </td>
                           <td className="text-center" style={{ width: '80px' }}>
                             <Form.Check

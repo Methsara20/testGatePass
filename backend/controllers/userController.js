@@ -1,4 +1,6 @@
 const db = require('../config/db');
+const bcrypt = require('bcrypt');
+
 
 exports.getUsers = (req, res) => {
     db.query('SELECT * FROM users ', (err, results) => {
@@ -89,5 +91,59 @@ exports.getUserById = (req, res) => {
         }
 
         res.json(results[0]); // return single user
+    });
+};
+
+
+// //update password only 
+// exports.updatePassword = (req, res) => {
+//     const { id } = req.params;
+//     const { currentPassword, newPassword } = req.body;
+
+//     const getUserQuery = `SELECT * FROM users WHERE id = ?`;
+//     db.query(getUserQuery, [id], async (err, results) => {
+//         if (err) return res.status(500).json({ error: err.message });
+//         if (results.length === 0) return res.status(404).json({ message: 'User not found' });
+
+//         const user = results[0];
+
+//         // Check current password
+//         const isMatch = await bcrypt.compare(currentPassword, user.password);
+//         if (!isMatch) return res.status(400).json({ message: 'Current password is incorrect' });
+
+//         // Hash new password
+//         const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+//         const updateQuery = `UPDATE users SET password = ? WHERE id = ?`;
+//         db.query(updateQuery, [hashedPassword, id], (err) => {
+//             if (err) return res.status(500).json({ error: err.message });
+//             res.json({ message: 'Password updated successfully' });
+//         });
+//     });
+// };
+
+//update password only 
+exports.updatePassword = (req, res) => {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    const getUserQuery = `SELECT * FROM users WHERE id = ?`;
+    db.query(getUserQuery, [id], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (results.length === 0) return res.status(404).json({ message: 'User not found' });
+
+        const user = results[0];
+
+        // 🔑 Check current password (plain text)
+        if (currentPassword !== user.password) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        // Update with new plain text password
+        const updateQuery = `UPDATE users SET password = ? WHERE id = ?`;
+        db.query(updateQuery, [newPassword, id], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Password updated successfully' });
+        });
     });
 };
