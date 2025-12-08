@@ -61,13 +61,25 @@ const OverdueMaterialsReport = () => {
     );
   };
 
+
+  
   const getSeverityBadge = (days) => {
-    if (days <= 7) return <Badge bg="warning" className="px-3">Recent ({days}d)</Badge>;
-    if (days <= 30) return <Badge bg="danger" className="px-3">Warning ({days}d)</Badge>;
+    if (days === 'Return')
+      return <Badge bg="success" className="px-3">Returned</Badge>;
+    if (days <= 7)
+      return <Badge bg="warning" className="px-3">Recent ({days}d)</Badge>;
+    if (days <= 30)
+      return <Badge bg="danger" className="px-3">Warning ({days}d)</Badge>;
     return <Badge bg="dark" className="px-3">Critical ({days}d)</Badge>;
   };
 
+
+
+
   const getRowClass = (days) => {
+    // If it's a returned gate pass (string 'Return') → no color
+    if (days === 'Return') return '';
+    
     if (days <= 7) return 'table-warning';
     if (days <= 30) return 'table-danger';
     return 'table-secondary';
@@ -160,10 +172,11 @@ const OverdueMaterialsReport = () => {
                 <thead className="table-dark">
                   <tr>
                     <th>Gate Pass ID</th>
+                    <th>Original Gate Pass ID</th>
                     <th>Material</th>
                     <th>Quantity</th>
                     <th>Requester</th>
-                    <th>Receiver</th>
+                    <th>Accepted By</th>
                     <th>
                       <OverlayTrigger
                         overlay={<Tooltip>Expected Return Date</Tooltip>}
@@ -190,12 +203,15 @@ const OverdueMaterialsReport = () => {
                         <td className="fw-bold text-primary">
                           REQ-{row.gate_pass_id}
                         </td>
+                        <td className="fw-bold text-primary">
+                          REF-{row.reference_gate_pass_id}
+                        </td>
                         <td>{row.material_name}</td>
                         <td>
                           <Badge bg="secondary">{row.qty}</Badge>
                         </td>
                         <td>{row.issuer}</td>
-                        <td>{row.receiver_name}</td>
+                        <td>{row.accepted_by}</td>
                         <td>
                           {row.return_date
                             ? new Date(row.return_date).toLocaleDateString()

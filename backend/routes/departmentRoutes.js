@@ -6,5 +6,8 @@ router.get('/', departmentController.getAllDepartments);
 router.post('/', departmentController.addDepartment);
 router.delete('/:id', departmentController.deleteDepartment);
 router.put('/:id', departmentController.updateDepartment);
+// New → active only
+router.get("/dep-active", departmentController.getActiveDepartments);
+
 
 module.exports = router;

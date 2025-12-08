@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/reports';
+const API_URL = 'http://192.168.10.144:5000/api/reports';
 
 // Gate Pass Summary
 export const getGatePassSummary = (filters) => {

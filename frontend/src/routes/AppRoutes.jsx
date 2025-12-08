@@ -60,8 +60,9 @@ const LayoutWrapper = ({ children, allowedRoles }) => {
 const getDefaultRoute = (userRole) => {
   switch (userRole) {
     case 'Admin':
+      return '/dashboard'
     case 'HOD':
-      return '/dashboard';
+      return '/gatepass/new';
     case 'User':
       return '/gatepass/new';
     default:
@@ -92,7 +93,7 @@ const AppRoutes = () => {
         {/* Protected routes with Layout */}
         <Route
           path="/dashboard"
-          element={<LayoutWrapper allowedRoles={['Admin', 'HOD']}><Dashboard /></LayoutWrapper>}
+          element={<LayoutWrapper allowedRoles={['Admin', 'HOD', 'Audit']}><Dashboard /></LayoutWrapper>}
         />
         <Route 
           path="/requests" 
@@ -130,29 +131,29 @@ const AppRoutes = () => {
         {/* Reports with Layout */}
         <Route 
           path="/reports/gatepass-summary" 
-          element={<LayoutWrapper allowedRoles={['Admin', 'HOD']}><GatePassSummaryReport /></LayoutWrapper>} 
+          element={<LayoutWrapper allowedRoles={['Admin', 'HOD', 'Audit']}><GatePassSummaryReport /></LayoutWrapper>} 
         />
         <Route 
           path="/reports/overdue-materials" 
-          element={<LayoutWrapper allowedRoles={['Admin', 'HOD']}><OverdueMaterialsReport /></LayoutWrapper>} 
+          element={<LayoutWrapper allowedRoles={['Admin', 'HOD', 'Audit']}><OverdueMaterialsReport /></LayoutWrapper>} 
         />
         <Route 
           path="/reports/approved-vs-rejected" 
-          element={<LayoutWrapper allowedRoles={['Admin', 'HOD']}><ApprovedVsRejectedReport /></LayoutWrapper>} 
+          element={<LayoutWrapper allowedRoles={['Admin', 'HOD', 'Audit']}><ApprovedVsRejectedReport /></LayoutWrapper>} 
         />
         <Route 
           path="/reports/material-movement" 
-          element={<LayoutWrapper allowedRoles={['Admin', 'HOD']}><MaterialMovementReport /></LayoutWrapper>} 
+          element={<LayoutWrapper allowedRoles={['Admin', 'HOD', 'Audit']}><MaterialMovementReport /></LayoutWrapper>} 
         />
         <Route 
           path="/reports/acceptance-report" 
-          element={<LayoutWrapper allowedRoles={['Admin', 'HOD']}><AcceptanceReport /></LayoutWrapper>} 
+          element={<LayoutWrapper allowedRoles={['Admin', 'HOD', 'Audit']}><AcceptanceReport /></LayoutWrapper>} 
         />
         
         {/* Other routes with Layout */}
         <Route 
           path="/cancel-approval" 
-          element={<LayoutWrapper allowedRoles={['Admin', 'HOD']}><CancelApproval /></LayoutWrapper>} 
+          element={<LayoutWrapper allowedRoles={['Admin', 'HOD', 'Audit']}><CancelApproval /></LayoutWrapper>} 
         />
         <Route 
           path="/gatepass/new" 
@@ -161,7 +162,7 @@ const AppRoutes = () => {
 
         <Route 
           path="/profile" 
-          element={<LayoutWrapper allowedRoles={['Admin', 'HOD', 'User']}><Profile /></LayoutWrapper>} 
+          element={<LayoutWrapper allowedRoles={['Admin', 'HOD', 'User', 'Audit']}><Profile /></LayoutWrapper>} 
         />
         
         {/* Unauthorized page - no layout needed */}

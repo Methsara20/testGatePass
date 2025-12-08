@@ -10,6 +10,7 @@ const departmentRoutes = require('./routes/departmentRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const cancelApprovalRoutes = require('./routes/cancelApprovalRoutes');
 const returnGatePassRoutes = require('./routes/returnGatePassRoutes');
+const notificationsRoutes = require("./routes/notificationsRoutes");
 const { errorHandler } = require('./utils/errorHandler');
 const { logger } = require('./utils/logger');
 
@@ -18,9 +19,9 @@ const app = express();
 // Enhanced CORS configuration
 app.use(cors({
   origin: [
-    'http://localhost:5173',         // Your local dev
-    'http://192.168.10.144:5173',    // Your machine's IP
-    'http://192.168.x.x:5173'        // Other PCs in network (replace x.x)
+    'http://localhost:5173',         
+    'http://192.168.10.144:5173',    
+    'http://192.168.x.x:5173'        
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
@@ -40,6 +41,7 @@ app.use('/api/departments', departmentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/cancel-approval', cancelApprovalRoutes);
 app.use('/api/return-gatepass', returnGatePassRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 
 // Error handler

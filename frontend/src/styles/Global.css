@@ -1,0 +1,47 @@
+/* Minimal global styles */
+
+/* Ensure external header dropdowns have the highest z-index */
+.navbar .dropdown-menu,
+.app-header .dropdown-menu,
+.main-header .dropdown-menu,
+.top-header .dropdown-menu,
+.header .dropdown-menu,
+.site-header .dropdown-menu,
+.page-header .dropdown-menu,
+header .dropdown-menu,
+.external-header .dropdown-menu {
+  z-index: 9999 !important;
+}
+
+.navbar-collapse,
+.app-header .collapse,
+.main-header .collapse,
+.top-header .collapse {
+  z-index: 9998 !important;
+}
+
+:root {
+  --external-header-height: 60px;
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 70px;
+}
+
+/* Chart container */
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+/* Mobile-specific chart adjustments */
+@media (max-width: 768px) {
+  .chart-container {
+    height: 180px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .chart-container {
+    height: 150px !important;
+  }
+}

@@ -11,13 +11,13 @@ exports.getUsers = (req, res) => {
 
 exports.addUser = (req, res) => {
     
-    const { username, password, full_name, role, email, phone_number, location, department } = req.body;
+    const { username, password, full_name, role, email, phone_number, location, department, status } = req.body;
 
     const query = `
-        INSERT INTO users (username, password, full_name, role, email, phone_number, location, department)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (username, password, full_name, role, email, phone_number, location, department, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
     `;
-    db.query(query, [username, password, full_name, role, email, phone_number, location, department ], (err, result) => {
+    db.query(query, [username, password, full_name, role, email, phone_number, location, department, status ], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         res.status(201).json({ message: 'User created successfully', userId: result.insertId });
     });
@@ -27,14 +27,14 @@ exports.addUser = (req, res) => {
 exports.updateUser = (req, res) => {
     
     const { id } = req.params;
-    const { username, password, full_name, role, email, phone_number, location, department  } = req.body;
+    const { username, password, full_name, role, email, phone_number, location, department, status  } = req.body;
 
     const query = `
         UPDATE users
-        SET username = ?, password = ?, full_name = ?, role = ?, email = ?, phone_number = ?, location = ?, department = ?
+        SET username = ?, password = ?, full_name = ?, role = ?, email = ?, phone_number = ?, location = ?, department = ?, status = ?
         WHERE id = ?
     `;
-    db.query(query, [username, password, full_name, role, email, phone_number, location, department , id], (err, result) => {
+    db.query(query, [username, password, full_name, role, email, phone_number, location, department, status , id], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'User not found' });
@@ -66,7 +66,7 @@ exports.loginUser = (req, res) => {
     const { email, password, location } = req.body;
 
     const query = `
-        SELECT * FROM users WHERE username = ? AND password = ? AND location = ?
+        SELECT * FROM users WHERE BINARY username = ? AND BINARY password = ? AND BINARY location = ? AND BINARY status = 'active'
     `;
     db.query(query, [email, password, location], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });

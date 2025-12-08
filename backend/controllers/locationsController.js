@@ -9,10 +9,10 @@ exports.getAllLocations = (req, res) => {
   };
 // Add a new location
 exports.addLocation = (req, res) => {
-  const { location_name } = req.body;
+  const { location_name, status } = req.body;
   if (!location_name) return res.status(400).json({ error: 'Location name required' });
 
-  db.query('INSERT INTO locations (location_name) VALUES (?)', [location_name], (err, result) => {
+  db.query('INSERT INTO locations (location_name, status) VALUES (?, ?)', [location_name, status], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Location added successfully', location_id: result.insertId });
   });
@@ -30,12 +30,22 @@ exports.deleteLocation = (req, res) => {
 // Edit a location (optional)
 exports.updateLocation = (req, res) => {
   const { id } = req.params;
-  const { location_name } = req.body;
+  const { location_name, status } = req.body;
 
-  db.query('UPDATE locations SET location_name = ? WHERE location_id = ?', [location_name, id], (err) => {
+  db.query('UPDATE locations SET location_name = ?, status =? WHERE location_id = ?', [location_name, status, id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Location updated successfully' });
   });
 };
 
 
+// Get ONLY active locations → for Login & Gate Pass form
+exports.getActiveLocations = (req, res) => {
+  db.query(
+    "SELECT * FROM locations WHERE status = 'active' ORDER BY location_id ASC",
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+};

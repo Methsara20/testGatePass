@@ -8,20 +8,28 @@ router.get('/summary', (req, res) => {
       COUNT(*) AS total,
       SUM(status = 'Approved') AS approved,
       SUM(status = 'Pending') AS pending,
-      SUM(status = 'Rejected') AS rejected
+      SUM(status = 'Rejected') AS rejected,
+      SUM(status = 'Cancelled') AS cancelled
     FROM gate_pass_requests
   `;
 
   const recentQuery = `
     SELECT 
       gpr.gate_pass_id,
+      u.full_name,
+      u.department AS from_department,
       gpr.request_type,
       gpr.status,
       gpr.request_date,
+      gpr.location,
+      gpr.department,
+      gpr.destination_address,
+      gpr.receiver_name,
       gpr.created_by,
       SUM(gpm.qty) AS total_qty
     FROM gate_pass_requests gpr
     LEFT JOIN gate_pass_materials gpm ON gpr.gate_pass_id = gpm.gate_pass_id
+    LEFT JOIN users u ON gpr.created_by = u.id
     GROUP BY gpr.gate_pass_id
     ORDER BY gpr.request_date DESC
     LIMIT 5

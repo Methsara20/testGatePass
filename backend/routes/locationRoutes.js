@@ -4,7 +4,8 @@ const {
   getAllLocations, 
   addLocation, 
   deleteLocation, 
-  updateLocation 
+  updateLocation ,
+  getActiveLocations
 } = require('../controllers/locationsController');
 
 // Routes
@@ -12,5 +13,6 @@ router.get('/', getAllLocations);
 router.post('/', addLocation);
 router.delete('/:id', deleteLocation);
 router.put('/:id', updateLocation);
+router.get("/active", getActiveLocations);
 
 module.exports = router;

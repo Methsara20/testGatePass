@@ -114,25 +114,119 @@ exports.exportGatePassSummary = (req, res) => {
 };
 
 
+// exports.getOverdueMaterials = (req, res) => {
+//     const { whereClause, values } = buildFilters(req.query);
+//     const query = `
+//         SELECT gpr.gate_pass_id, gm.description AS material_name, gm.qty,
+//                gpr.created_by AS issuer, gpr.receiver_name,
+//                gm.return_date, DATEDIFF(CURDATE(), gm.return_date) AS days_overdue
+//         FROM gate_pass_requests gpr
+//         JOIN gate_pass_materials gm ON gpr.gate_pass_id = gm.gate_pass_id
+//         ${whereClause}
+//         AND gm.return_date < CURDATE()
+//         AND (gpr.delivery_status != 'Accepted' OR gpr.delivery_status IS NULL)
+//         ORDER BY gm.return_date ASC;
+//     `;
+//     db.query(query, values, (err, results) => {
+//         if (err) return res.status(500).json({ error: err.message });
+//         res.json(results);
+//     });
+// };
+
+// exports.getOverdueMaterials = (req, res) => {
+//     const { whereClause, values } = buildFilters(req.query);
+
+//     const query = `
+//         SELECT 
+//             gpr.gate_pass_id,
+//             gm.description AS material_name,
+//             gm.qty,
+//             gpr.created_by AS issuer,
+//             gpr.receiver_name,
+//             gm.return_date,
+//             DATEDIFF(CURDATE(), gm.return_date) AS days_overdue
+//         FROM gate_pass_requests gpr
+//         JOIN gate_pass_materials gm 
+//             ON gpr.gate_pass_id = gm.gate_pass_id
+//         ${whereClause}
+//         AND gpr.request_type = 'Returnable'
+//         ORDER BY gm.return_date ASC;
+//     `;
+
+//     db.query(query, values, (err, results) => {
+//         if (err) {
+//             console.error("Error fetching overdue materials:", err);
+//             return res.status(500).json({ error: err.message });
+//         }
+//         res.json(results);
+//     });
+// };
+
+
 
 exports.getOverdueMaterials = (req, res) => {
     const { whereClause, values } = buildFilters(req.query);
+
     const query = `
-        SELECT gpr.gate_pass_id, gm.description AS material_name, gm.qty,
-               gpr.created_by AS issuer, gpr.receiver_name,
-               gm.return_date, DATEDIFF(CURDATE(), gm.return_date) AS days_overdue
+        SELECT 
+            gpr.gate_pass_id,
+            gm.description AS material_name,
+            gpr.reference_gate_pass_id,
+            gm.qty,
+            gpr.created_by AS issuer,
+            gpr.accepted_by,
+            gm.return_date,
+            CASE 
+                -- If this is a return gate pass, show 'Return'
+                WHEN gpr.reference_gate_pass_id IS NOT NULL AND gpr.reference_gate_pass_id != '' 
+                    THEN 'Return'
+
+                -- If this is an original that has already been returned → freeze overdue
+                WHEN EXISTS (
+                    SELECT 1 
+                    FROM gate_pass_requests r 
+                    WHERE r.reference_gate_pass_id = gpr.gate_pass_id
+                )
+                    THEN (
+                        SELECT DATEDIFF(r.created_at, gm.return_date)
+                        FROM gate_pass_requests r
+                        WHERE r.reference_gate_pass_id = gpr.gate_pass_id
+                        LIMIT 1
+                    )
+
+                -- Otherwise, keep calculating overdue
+                ELSE DATEDIFF(CURDATE(), gm.return_date)
+            END AS days_overdue
         FROM gate_pass_requests gpr
-        JOIN gate_pass_materials gm ON gpr.gate_pass_id = gm.gate_pass_id
+        JOIN gate_pass_materials gm 
+            ON gpr.gate_pass_id = gm.gate_pass_id
         ${whereClause}
-        AND gm.return_date < CURDATE()
-        AND (gpr.delivery_status != 'Accepted' OR gpr.delivery_status IS NULL)
+        AND gpr.request_type = 'Returnable'
+        
+        -- ❗ Exclude originals that already have a return
+        AND gpr.gate_pass_id NOT IN (
+            SELECT reference_gate_pass_id 
+            FROM gate_pass_requests 
+            WHERE reference_gate_pass_id IS NOT NULL
+        )
+
         ORDER BY gm.return_date ASC;
     `;
+
     db.query(query, values, (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error("Error fetching overdue materials:", err);
+            return res.status(500).json({ error: err.message });
+        }
         res.json(results);
     });
 };
+
+
+
+
+
+
 
 exports.exportOverdueMaterials = (req, res) => {
     const { whereClause, values } = buildFilters(req.query);

@@ -341,7 +341,8 @@ exports.getPassSummary = (req, res) => {
   }
   
   const sql = `
-    SELECT gpr.*
+    SELECT gpr.*,
+    u.full_name
     FROM gate_pass_requests gpr
     JOIN users u ON gpr.created_by = u.id
     WHERE u.location = ? 
@@ -593,10 +594,11 @@ function generatePDFContent(doc, gatePass) {
     // Destination & Transport Section
     drawSectionHeader(doc, 'Destination & Transport', margin);
     const destTable = [
-      ['To Location (External)', gatePass.destination_address || 'N/A', 'Transport Mode', gatePass.transport_mode || 'N/A'],
-      ['Address', gatePass.destination_address || 'N/A', '', ''],
+      ['To Location (External)', gatePass.receiver_name || gatePass.destination_address || 'N/A', 'Transport Mode', gatePass.transport_mode || 'N/A'],
+      ['Address', gatePass.department || gatePass.destination_address || 'N/A', '', ''],
       ['Driver Name', gatePass.driver_name || 'N/A', 'Vehicle No.', gatePass.vehicle_no || 'N/A'],
-      ['Remarks', gatePass.remarks || 'N/A', '', '']
+      ['Remarks', gatePass.remarks || 'N/A', '', ''],
+      ['Driver Contact', gatePass.driver_contact || 'N/A', '', '']
     ];
     drawInfoTable(doc, destTable, margin, contentWidth);
     doc.moveDown(1);
@@ -630,6 +632,109 @@ function generatePDFContent(doc, gatePass) {
     doc.text('Error generating PDF content');
   }
 }
+
+// function generatePDFContent(doc, gatePass) {
+//   try {
+//     const pageWidth = doc.page.width;
+//     const margin = 50;
+//     const contentWidth = pageWidth - (margin * 2);
+    
+//     // Add company logo at top right
+//     const logoPath = "D:/Test_GatePass/testGatePass/backend/assets/LOGO.png"; // Update with your actual logo filename
+//     const logoWidth = 100;
+//     const logoHeight = 40;
+//     const logoX = pageWidth - margin - logoWidth;
+//     const logoY = margin - 10;
+    
+//     try {
+//       doc.image(logoPath, logoX, logoY, { width: logoWidth, height: logoHeight });
+//     } catch (error) {
+//       console.warn('Company logo not found at path:', logoPath);
+//       // Continue without logo if not found
+//     }
+    
+//     // Header - Title
+//     doc.fontSize(18).font('Helvetica-Bold').text('MATERIAL GATE PASS', { align: 'center' });
+//     doc.moveDown(0.5);
+    
+//     // Print status (Original/Duplicate)
+//     const printStatus = (gatePass.print_count && gatePass.print_count > 0) ? 'DUPLICATE' : 'ORIGINAL';
+//     doc.fontSize(12).font('Helvetica-Bold').fillColor('red').text(printStatus, { align: 'center' });
+//     doc.fillColor('black');
+//     doc.moveDown(0.5);
+    
+//     // Gate Pass Number and Date
+//     doc.fontSize(10).font('Helvetica');
+//     doc.text(`Gate Pass No: GP-2025-${String(gatePass.gate_pass_id).padStart(5, '0')}`, { align: 'center' });
+//     doc.text(`Date Issued: ${new Date(gatePass.created_at).toISOString().split('T')[0]}`, { align: 'center' });
+//     doc.moveDown(1);
+
+//     // Rest of the function remains exactly the same...
+//     // Requester Information Section
+//     drawSectionHeader(doc, 'Requester Information', margin);
+//     const requesterTable = [
+//       ['Name', gatePass.requester_name || 'N/A', 'Employee ID', gatePass.created_by || 'N/A'],
+//       ['Department', gatePass.requester_department || gatePass.requester_role || 'N/A', 'From Location', gatePass.location || 'N/A'],
+//       ['Emergency Contact', gatePass.requester_phone || 'N/A', '', '']
+//     ];
+//     drawInfoTable(doc, requesterTable, margin, contentWidth);
+//     doc.moveDown(1);
+
+//     // Gate Pass Details Section
+//     drawSectionHeader(doc, 'Gate Pass Details', margin);
+//     const gatePassTable = [
+//       ['Gate Pass Type', gatePass.request_type || 'N/A', 'Required Dispatch Date', gatePass.request_date || 'N/A'],
+//       ['Purpose / Reason', gatePass.purpose || 'N/A', '', '']
+//     ];
+//     drawInfoTable(doc, gatePassTable, margin, contentWidth);
+//     doc.moveDown(1);
+
+//     // Material Details Section
+//     drawSectionHeader(doc, 'Material Details', margin);
+//     drawMaterialTable(doc, gatePass.materials || [], margin, contentWidth);
+//     doc.moveDown(1);
+
+//     // Destination & Transport Section
+//     drawSectionHeader(doc, 'Destination & Transport', margin);
+//     const destTable = [
+//       ['To Location (External)', gatePass.destination_address || 'N/A', 'Transport Mode', gatePass.transport_mode || 'N/A'],
+//       ['Address', gatePass.destination_address || 'N/A', '', ''],
+//       ['Driver Name', gatePass.driver_name || 'N/A', 'Vehicle No.', gatePass.vehicle_no || 'N/A'],
+//       ['Remarks', gatePass.remarks || 'N/A', '', '']
+//     ];
+//     drawInfoTable(doc, destTable, margin, contentWidth);
+//     doc.moveDown(1);
+
+//     // Approval Details Section
+//     drawSectionHeader(doc, 'Approval Details', margin);
+//     const approvalDate = gatePass.updated_at ? new Date(gatePass.updated_at).toLocaleString() : 'N/A';
+//     const approvalTable = [
+//       ['Approved By', gatePass.approver_name || 'N/A', 'Approval Date', approvalDate]
+//     ];
+//     drawInfoTable(doc, approvalTable, margin, contentWidth);
+//     doc.moveDown(1);
+
+//     // Security Section
+//     drawSectionHeader(doc, 'For Security Use Only', margin);
+//     drawSecurityTable(doc, margin, contentWidth);
+    
+//    // Footer - positioned at current position but right-aligned
+//    const footerText = 'This document is system generated after approval. Security section must be filled before dispatch.';
+//    const currentY = doc.y;
+//    const footerX = pageWidth - margin - 250; // Position from right edge
+   
+//    doc.fontSize(8).font('Helvetica-Oblique')
+//       .text(footerText, footerX, currentY, { 
+//         align: 'right', 
+//         width: 250 
+//       });
+
+//   } catch (error) {
+//     console.error('Error generating PDF content:', error);
+//     doc.text('Error generating PDF content');
+//   }
+// }
+
 
 function drawSectionHeader(doc, title, margin) {
   doc.fontSize(12).font('Helvetica-Bold').fillColor('blue').text(title, margin, doc.y, { 

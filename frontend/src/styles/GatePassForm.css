@@ -1,56 +1,250 @@
 /* Custom dropdown styles */
 .custom-dropdown {
-    background: white !important;
-    border: 1px solid #ced4da !important;
-    border-radius: 4px !important;
-    appearance: none !important;
-    padding-right: 2.5rem !important;
-    transition: all 0.3s ease !important;
+  background: white !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 4px !important;
+  appearance: none !important;
+  padding: 6px 2.5rem 6px 8px !important; /* Reduced padding */
+  transition: all 0.3s ease !important;
+  font-size: 0.85rem !important; /* Smaller font size */
+  height: 32px !important; /* Fixed height */
+  line-height: 1.2 !important;
+}
+
+.custom-dropdown:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+  outline: none !important;
+}
+
+.dropdown-wrapper {
+  position: relative;
+}
+
+.dropdown-arrow {
+  position: absolute;
+  right: 8px !important; /* Moved closer to edge */
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem !important; /* Smaller arrow */
+  color: #343a40;
+  pointer-events: none;
+  transition: transform 0.3s ease;
+  z-index: 10;
+  background: white;
+  padding: 1px;
+  border-radius: 2px;
+}
+
+.custom-dropdown:focus + .dropdown-arrow {
+  transform: translateY(-50%) rotate(180deg);
+  animation: bounce 0.5s ease;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-50%) rotate(180deg);
+  }
+  50% {
+    transform: translateY(-60%) rotate(180deg);
+  }
+}
+
+/* For dropdowns inside table cells - even more compact */
+.table .custom-dropdown {
+  padding: 4px 1.8rem 4px 6px !important; /* More compact padding */
+  font-size: 0.8rem !important; /* Even smaller font in tables */
+  height: 28px !important; /* Smaller height for table cells */
+  min-width: 80px !important; /* Minimum width to prevent too narrow dropdowns */
+}
+
+.table .dropdown-arrow {
+  right: 6px !important;
+  font-size: 0.9rem !important; /* Smaller arrow in tables */
+}
+
+/* Form labels - make them smaller too for consistency */
+.form-label.fw-bold.small {
+  font-size: 0.75rem !important;
+  margin-bottom: 4px !important;
+}
+
+/* Regular form inputs to match dropdown sizing */
+.form-control.py-2 {
+  padding: 6px 8px !important;
+  font-size: 0.85rem !important;
+  height: 32px !important;
+}
+
+/* Table form controls */
+.table .form-control {
+  padding: 4px 6px !important;
+  font-size: 0.8rem !important;
+  height: 28px !important;
+}
+
+/* Priority dropdown specific styling */
+.dropdown-wrapper .custom-dropdown[style*="font-size: 5px"] {
+  font-size: 0.85rem !important; /* Override the inline style */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .custom-dropdown {
+    font-size: 0.8rem !important;
+    height: 30px !important;
+    padding: 5px 2rem 5px 6px !important;
   }
   
-  .custom-dropdown:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
-    outline: none !important;
-  }
-  
-  .dropdown-wrapper {
-    position: relative;
+  .table .custom-dropdown {
+    font-size: 0.75rem !important;
+    height: 26px !important;
+    min-width: 70px !important;
   }
   
   .dropdown-arrow {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.2rem;
-    color: #343a40;
-    pointer-events: none;
-    transition: transform 0.3s ease;
-    z-index: 10;
-    background: white;
-    padding: 2px;
-    border-radius: 2px;
+    font-size: 0.9rem !important;
+    right: 6px !important;
   }
-  
-  .custom-dropdown:focus + .dropdown-arrow {
-    transform: translateY(-50%) rotate(180deg);
-    animation: bounce 0.5s ease;
-  }
-  
-  @keyframes bounce {
-    0%, 100% {
-      transform: translateY(-50%) rotate(180deg);
-    }
-    50% {
-      transform: translateY(-60%) rotate(180deg);
-    }
-  }
-  
-  /* For dropdowns inside table cells */
-  .table .custom-dropdown {
-    padding-right: 2rem !important;
-  }
-  
-  .table .dropdown-arrow {
-    right: 8px;
-  }
+}
+
+/* Custom widths for specific dropdowns */
+.col-md-2 .custom-dropdown {
+  min-width: 120px !important;
+}
+
+.col-md-4 .custom-dropdown {
+  min-width: 150px !important;
+}
+
+/* UOM dropdown in table - make it more compact */
+td:has(.custom-dropdown) {
+  min-width: 90px !important;
+}
+
+/* Action column button sizing */
+.table .btn-sm {
+  padding: 2px 6px !important;
+  font-size: 0.7rem !important;
+  line-height: 1 !important;
+}
+
+/* Template buttons styling */
+.btn-outline-secondary {
+  color: #495057 !important;
+  border-color: #6c757d !important;
+  font-weight: 500 !important;
+}
+
+.btn-outline-secondary:hover {
+  color: #ffffff !important;
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+.btn-outline-secondary:focus {
+  color: #ffffff !important;
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
+}
+
+/* Sign button styling */
+.btn-outline-primary {
+  color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  font-weight: 500 !important;
+}
+
+.btn-outline-primary:hover {
+  color: #ffffff !important;
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+}
+
+.btn-outline-primary:focus {
+  color: #ffffff !important;
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+}
+
+/* Sign button when signed (success state) */
+.btn-outline-primary.border-success.text-success {
+  color: #b40000 !important;
+  border-color: #191b87 !important;
+}
+
+.btn-outline-primary.border-success.text-success:hover {
+  color: #ffffff !important;
+  background-color: #198754 !important;
+  border-color: #198754 !important;
+}
+
+/* Submit form button styling */
+.btn-primary {
+  color: #ffffff !important;
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  font-weight: 600 !important;
+  padding: 8px 20px !important;
+  font-size: 0.9rem !important;
+}
+
+.btn-primary:hover {
+  color: #ffffff !important;
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-primary:focus {
+  color: #ffffff !important;
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+.btn-primary:active {
+  color: #ffffff !important;
+  background-color: #0a58ca !important;
+  border-color: #0a53be !important;
+  transform: translateY(0) !important;
+}
+
+/* Custom colors for all buttons if you want different colors */
+/* Uncomment and modify these if you want custom colors */
+/*
+.btn-outline-secondary {
+  color: #007bff !important;
+  border-color: #007bff !important;
+}
+
+.btn-outline-secondary:hover {
+  color: #ffffff !important;
+  background-color: #007bff !important;
+  border-color: #007bff !important;
+}
+
+.btn-outline-primary {
+  color: #28a745 !important;
+  border-color: #28a745 !important;
+}
+
+.btn-outline-primary:hover {
+  color: #ffffff !important;
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+}
+
+.btn-primary {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+}
+
+.btn-primary:hover {
+  background-color: #c82333 !important;
+  border-color: #bd2130 !important;
+}
+*/
