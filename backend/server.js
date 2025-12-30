@@ -14,6 +14,7 @@ const notificationsRoutes = require("./routes/notificationsRoutes");
 const { errorHandler } = require('./utils/errorHandler');
 const { logger } = require('./utils/logger');
 
+
 const app = express();
 
 // Enhanced CORS configuration

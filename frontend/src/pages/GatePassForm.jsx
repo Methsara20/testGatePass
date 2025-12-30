@@ -5,6 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import { getDepartments } from "../services/departmentService";
 import { BiMap, BiBuilding, BiCar, BiPackage, BiChevronDown } from "react-icons/bi";
 import "../styles/GatePassForm.css";
+import { sendApprovalEmail } from "../services/gatepassService";
+
 
 const GatePassForm = () => {
   const { user } = useAuth();
@@ -423,111 +425,235 @@ const GatePassForm = () => {
     handleChange('driver_contact', countryCode.code + driverPhoneNumber);
   };
   
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setError("");
   
-    if (!formData.created_by) {
-      setError("No valid user ID found. Please ensure you're logged in.");
-      return;
-    }
+  //   if (!formData.created_by) {
+  //     setError("No valid user ID found. Please ensure you're logged in.");
+  //     return;
+  //   }
   
-    if (!formData.purpose) {
-      setError("Please enter a purpose");
-      return;
-    }
+  //   if (!formData.purpose) {
+  //     setError("Please enter a purpose");
+  //     return;
+  //   }
     
-    if (!priority) {
-      setError("Please select a priority level");
-      return;
-    }
+  //   if (!priority) {
+  //     setError("Please select a priority level");
+  //     return;
+  //   }
   
-    if (materials.some(m => !m.description || !m.qty || !m.uom)) {
-      setError("Please fill all required material fields");
-      return;
-    }
+  //   if (materials.some(m => !m.description || !m.qty || !m.uom)) {
+  //     setError("Please fill all required material fields");
+  //     return;
+  //   }
   
-    if (materials.some(m => m.returnable && !m.return_date)) {
-      setError("Please specify return dates for all returnable items");
-      return;
-    }
+  //   if (materials.some(m => m.returnable && !m.return_date)) {
+  //     setError("Please specify return dates for all returnable items");
+  //     return;
+  //   }
   
-    if (formData.destination_type === "external" && !formData.receiver_name) {
-      setError("Please enter receiver name for external destinations");
-      return;
-    }
+  //   if (formData.destination_type === "external" && !formData.receiver_name) {
+  //     setError("Please enter receiver name for external destinations");
+  //     return;
+  //   }
   
-    try {
-      const now = new Date();
-      const currentDateTime = {
-        request_date: now.toISOString().split("T")[0],
-        request_time: now.toTimeString().substring(0, 5)
-      };
+  //   try {
+  //     const now = new Date();
+  //     const currentDateTime = {
+  //       request_date: now.toISOString().split("T")[0],
+  //       request_time: now.toTimeString().substring(0, 5)
+  //     };
       
-      const formDataToSend = new FormData();
+  //     const formDataToSend = new FormData();
   
-      const dbPayload = {
-        ...currentDateTime,
-        request_type: formData.request_type,
-        location: formData.from_location,
-        purpose: formData.purpose,
-        additional_notes: formData.additional_notes || "",
-        status: "Pending",
-        is_draft: false,
-        is_printable: 0,
-        delivery_status: "Waiting",
-        department: formData.destination_type === "internal" 
-          ? formData.to_department_internal 
-          : "",
-        destination_address: formData.destination_type === "internal"
-          ? formData.to_location_internal
-          : formData.destination_address,
-        transport_mode: formData.transport_mode,
-        vehicle_no: formData.vehicle_number,
-        driver_name: formData.driver_name,
-        driver_contact: formData.driver_contact,
-        remarks: formData.remarks,
-        created_by: formData.created_by,
-        receiver_name: formData.receiver_name || "",
-        delivery_comment: formData.delivery_comment || "",
-        priority: priority
-      };
+  //     const dbPayload = {
+  //       ...currentDateTime,
+  //       request_type: formData.request_type,
+  //       location: formData.from_location,
+  //       purpose: formData.purpose,
+  //       additional_notes: formData.additional_notes || "",
+  //       status: "Pending",
+  //       is_draft: false,
+  //       is_printable: 0,
+  //       delivery_status: "Waiting",
+  //       department: formData.destination_type === "internal" 
+  //         ? formData.to_department_internal 
+  //         : "",
+  //       destination_address: formData.destination_type === "internal"
+  //         ? formData.to_location_internal
+  //         : formData.destination_address,
+  //       transport_mode: formData.transport_mode,
+  //       vehicle_no: formData.vehicle_number,
+  //       driver_name: formData.driver_name,
+  //       driver_contact: formData.driver_contact,
+  //       remarks: formData.remarks,
+  //       created_by: formData.created_by,
+  //       receiver_name: formData.receiver_name || "",
+  //       delivery_comment: formData.delivery_comment || "",
+  //       priority: priority
+  //     };
   
-      Object.entries(dbPayload).forEach(([key, value]) => {
-        formDataToSend.append(key, value);
-      });
+  //     Object.entries(dbPayload).forEach(([key, value]) => {
+  //       formDataToSend.append(key, value);
+  //     });
   
-      const materialsToSend = materials.map(material => ({
-        description: material.description,
-        serial_number: material.serial_number || null,
-        qty: material.qty,
-        uom: material.uom,
-        returnable: material.returnable ? 1 : 0,
-        return_date: material.returnable ? material.return_date || null : null
-      }));
+  //     const materialsToSend = materials.map(material => ({
+  //       description: material.description,
+  //       serial_number: material.serial_number || null,
+  //       qty: material.qty,
+  //       uom: material.uom,
+  //       returnable: material.returnable ? 1 : 0,
+  //       return_date: material.returnable ? material.return_date || null : null
+  //     }));
   
-      formDataToSend.append('materials', JSON.stringify(materialsToSend));
+  //     formDataToSend.append('materials', JSON.stringify(materialsToSend));
   
-      if (formData.document) {
-        formDataToSend.append('document', formData.document);
-      }
+  //     if (formData.document) {
+  //       formDataToSend.append('document', formData.document);
+  //     }
   
-      const response = await axios.post("http://192.168.10.144:5000/api/passes", formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+  //     const response = await axios.post("http://192.168.10.144:5000/api/passes", formDataToSend, {
+  //       headers: {
+  //         'Content-Type': 'multipart/form-data'
+  //       }
+  //     });
   
-      setSubmitted(true);
-      setGatePassId(response.data.gatePassId);
-      resetForm();
+  //     setSubmitted(true);
+  //     setGatePassId(response.data.gatePassId);
+  //     resetForm();
   
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || "Failed to submit. Please try again.";
-      setError(errorMessage);
-      console.error("Submission error:", err.response?.data || err.message);
+  //   } catch (err) {
+  //     const errorMessage = err.response?.data?.message || "Failed to submit. Please try again.";
+  //     setError(errorMessage);
+  //     console.error("Submission error:", err.response?.data || err.message);
+  //   }
+  // };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  if (!formData.created_by) {
+    setError("No valid user ID found. Please ensure you're logged in.");
+    return;
+  }
+
+  if (!formData.purpose) {
+    setError("Please enter a purpose");
+    return;
+  }
+  
+  if (!priority) {
+    setError("Please select a priority level");
+    return;
+  }
+
+  if (materials.some(m => !m.description || !m.qty || !m.uom)) {
+    setError("Please fill all required material fields");
+    return;
+  }
+
+  if (materials.some(m => m.returnable && !m.return_date)) {
+    setError("Please specify return dates for all returnable items");
+    return;
+  }
+
+  if (formData.destination_type === "external" && !formData.receiver_name) {
+    setError("Please enter receiver name for external destinations");
+    return;
+  }
+
+  try {
+    const now = new Date();
+    const currentDateTime = {
+      request_date: now.toISOString().split("T")[0],
+      request_time: now.toTimeString().substring(0, 5)
+    };
+    
+    const formDataToSend = new FormData();
+
+    const dbPayload = {
+      ...currentDateTime,
+      request_type: formData.request_type,
+      location: formData.from_location,
+      purpose: formData.purpose,
+      additional_notes: formData.additional_notes || "",
+      status: "Pending",
+      is_draft: false,
+      is_printable: 0,
+      delivery_status: "Waiting",
+      department: formData.destination_type === "internal" 
+        ? formData.to_department_internal 
+        : "",
+      destination_address: formData.destination_type === "internal"
+        ? formData.to_location_internal
+        : formData.destination_address,
+      transport_mode: formData.transport_mode,
+      vehicle_no: formData.vehicle_number,
+      driver_name: formData.driver_name,
+      driver_contact: formData.driver_contact,
+      remarks: formData.remarks,
+      created_by: formData.created_by,
+      receiver_name: formData.receiver_name || "",
+      delivery_comment: formData.delivery_comment || "",
+      priority: priority
+    };
+
+    Object.entries(dbPayload).forEach(([key, value]) => {
+      formDataToSend.append(key, value);
+    });
+
+    const materialsToSend = materials.map(material => ({
+      description: material.description,
+      serial_number: material.serial_number || null,
+      qty: material.qty,
+      uom: material.uom,
+      returnable: material.returnable ? 1 : 0,
+      return_date: material.returnable ? material.return_date || null : null
+    }));
+
+    formDataToSend.append('materials', JSON.stringify(materialsToSend));
+
+    if (formData.document) {
+      formDataToSend.append('document', formData.document);
     }
-  };
+
+    const response = await axios.post("http://192.168.10.144:5000/api/passes", formDataToSend, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    const gatePassIdFromResponse = response.data.gatePassId;
+    setSubmitted(true);
+    setGatePassId(gatePassIdFromResponse);
+
+    // Send approval email notification (non-blocking)
+    if (gatePassIdFromResponse) {
+      sendApprovalEmail(gatePassIdFromResponse)
+        .then((emailResponse) => {
+          if (emailResponse.data?.emailSent) {
+            console.log('✅ Approval email sent to HOD/Admin');
+          } else {
+            console.warn('⚠️ Email notification could not be sent');
+          }
+        })
+        .catch((emailError) => {
+          console.error('❌ Email notification failed:', emailError);
+          // Don't show error to user - submission was successful
+        });
+    }
+
+    resetForm();
+
+  } catch (err) {
+    const errorMessage = err.response?.data?.message || "Failed to submit. Please try again.";
+    setError(errorMessage);
+    console.error("Submission error:", err.response?.data || err.message);
+  }
+};
   
   if (loadingUser) {
     return (

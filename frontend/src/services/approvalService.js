@@ -14,7 +14,7 @@ export const rejectPass = (id, rejected_by) =>
 
   
 export const fetchGatePassWithMaterials = (id) =>
-    axios.get(`http://192.168.10.144:5000/api/passes/${id}/materials`);
+    axios.get(`${API}/${id}/materials`);
 
 
 // Updated approvePass function to accept userId parameter
@@ -30,3 +30,4 @@ export const approvePass = async (gatePassId, userId) => {
       throw error;
     }
 };
+

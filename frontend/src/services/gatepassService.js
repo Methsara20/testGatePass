@@ -38,3 +38,15 @@ export const generateGatePassPDF = (id) => {
       }
     });
   };
+
+
+// Send approval email when gate pass is submitted
+export const sendApprovalEmail = (gatePassId) => {
+  return axios.post(`${BASE_URL}/approvals/send-email`, {
+    gate_pass_id: gatePassId
+  }).catch(error => {
+    // Log email error but don't throw - we don't want to fail the submission
+    console.warn('Email notification failed:', error.response?.data || error.message);
+    return { data: { emailSent: false, error: error.message } };
+  });
+};
